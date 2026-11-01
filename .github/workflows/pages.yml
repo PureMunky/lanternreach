@@ -36,6 +36,13 @@ jobs:
             cat lanternreach.html
             printf '%s\n' '</body></html>'
           } > _site/index.html
+          {
+            printf '%s\n' '<!doctype html><html lang="en"><head><meta charset="utf-8">' \
+              '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' \
+              '<link rel="icon" href="icon.svg" type="image/svg+xml"><style>[hidden]{display:none!important}</style></head><body>'
+            cat lanternreach-radio.html
+            printf '%s\n' '</body></html>'
+          } > _site/radio.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
       - id: deployment

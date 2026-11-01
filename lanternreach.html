@@ -34,6 +34,7 @@ h3{font-size:calc(17px * var(--ui))}
 .tab:hover{color:var(--ink)}
 .dock-body{overflow:auto;padding:18px 20px;display:flex;flex-direction:column;gap:16px;min-height:0}
 .dock-foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--line)}
+a.btn{text-decoration:none;display:inline-block;color:var(--ink)}
 .btn{background:var(--hull);border:1px solid var(--line-hi);padding:7px 12px;cursor:pointer;font-family:var(--f-display);font-size:calc(13px * var(--ui));letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
 .btn:hover:not(:disabled){border-color:var(--amber);color:var(--amber)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
@@ -147,6 +148,7 @@ body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{dis
       <div class="row" style="justify-content:flex-start">
         <button class="btn primary" id="newGame" type="button">Launch new charter</button>
         <button class="btn" id="daily" type="button">Daily galaxy</button>
+        <a class="btn" href="radio.html">Lanternreach Radio ♪</a>
         <button class="btn" id="contGame" type="button" hidden>Continue</button>
         <span id="contInfo" class="muted mono" style="font-size:calc(13px * var(--ui))"></span>
       </div>

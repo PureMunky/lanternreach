@@ -24,4 +24,12 @@ EOF
   cat "$DIR/lanternreach.html"
   printf '%s\n' '</body></html>'
 } > "$DIR/play.html"
+# the title screen links to the radio page, so build it alongside
+{
+  printf '%s\n' '<!doctype html><html lang="en"><head><meta charset="utf-8">' \
+    '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' \
+    '<style>[hidden]{display:none!important}</style></head><body>'
+  cat "$DIR/lanternreach-radio.html"
+  printf '%s\n' '</body></html>'
+} > "$DIR/radio.html"
 exec firefox --new-instance --profile "$PROFILE" --kiosk "file://$DIR/play.html"

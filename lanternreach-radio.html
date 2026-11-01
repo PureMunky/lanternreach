@@ -1,0 +1,330 @@
+<title>Lanternreach Radio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
+<style>
+/* Layout: a receiver. A wide viewscreen on top (starfield + spectrum ring), the tuning dial of
+   stations below it, one transport bar between them. Single dark look, on purpose: it's space. */
+:root{
+  --void:#060911; --hull:#0d1321; --panel:#0b101d; --line:#243150; --line-hi:#3a4b72;
+  --ink:#e1e7f2; --dim:#8a96ae; --amber:#ffb547; --amber-ink:#1a1206;
+  --accent:#ffb547;
+  --f-display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--void);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:6px 20px}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,6vw,48px);line-height:1;margin:4px 0 0;letter-spacing:.02em;text-wrap:balance}
+h1 span{color:var(--amber)}
+.tagline{color:var(--dim);margin:0;max-width:52ch;flex-basis:100%}
+a.btn{text-decoration:none;display:inline-block}
+
+/* viewscreen */
+.screen{position:relative;border:1px solid var(--line);background:var(--void);aspect-ratio:16/7;min-height:220px;max-width:100%;overflow:hidden}
+.screen canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.readout{position:absolute;left:16px;right:16px;bottom:12px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:4px 16px;pointer-events:none}
+.now{font-family:var(--f-display);font-weight:600;font-size:clamp(20px,3.4vw,30px);line-height:1.1;color:var(--ink)}
+.now small{display:block;font-family:var(--f-mono);font-weight:400;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.chord{font-family:var(--f-mono);font-size:13px;color:var(--dim);text-align:right;font-variant-numeric:tabular-nums}
+.chord b{display:block;font-family:var(--f-display);font-weight:600;font-size:clamp(18px,3vw,24px);color:var(--accent);letter-spacing:.02em}
+.start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(6,9,17,.35);border:0;color:var(--ink);cursor:pointer;font:inherit}
+.start span{font-family:var(--f-display);font-size:15px;letter-spacing:.1em;text-transform:uppercase;padding:12px 22px;border:1px solid var(--amber);color:var(--amber);background:rgba(13,19,33,.85)}
+.start[hidden]{display:none}
+.start:hover span,.start:focus-visible span{background:var(--amber);color:var(--amber-ink)}
+
+/* transport */
+.transport{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;border:1px solid var(--line);background:var(--panel);padding:10px 14px}
+.btn{font-family:var(--f-display);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--hull);border:1px solid var(--line-hi);padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--amber);color:var(--amber)}
+.btn.primary{background:var(--amber);border-color:var(--amber);color:var(--amber-ink);min-width:92px}
+.btn.primary:hover{color:var(--amber-ink);filter:brightness(1.08)}
+.btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.vol{display:flex;align-items:center;gap:10px;font-family:var(--f-mono);font-size:12px;color:var(--dim)}
+.vol input{accent-color:var(--amber);width:min(180px,40vw)}
+.spacer{flex:1}
+.clock{font-family:var(--f-mono);font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+
+/* dial */
+.dial{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.station{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;padding:14px 16px;border:1px solid var(--line);background:var(--panel);min-width:0}
+.station:hover{border-color:var(--line-hi)}
+.station:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.station[aria-pressed="true"]{border-color:var(--c);background:linear-gradient(90deg,color-mix(in srgb,var(--c) 12%,var(--panel)),var(--panel) 70%)}
+.freq{grid-row:1/3;font-family:var(--f-mono);font-size:13px;color:var(--c);font-variant-numeric:tabular-nums;padding-top:3px;min-width:52px}
+.freq i{display:block;font-style:normal;font-size:10px;letter-spacing:.12em;color:var(--dim)}
+.st-name{font-family:var(--f-display);font-weight:600;font-size:19px;line-height:1.2;color:var(--ink)}
+.st-meta{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase}
+.st-desc{grid-column:2;margin:4px 0 0;color:var(--dim);font-size:14px;min-width:0}
+.live{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--c);margin-left:8px;vertical-align:middle;opacity:0}
+.station[aria-pressed="true"] .live{opacity:1;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+footer{color:var(--dim);font-size:13px;max-width:70ch}
+@media (prefers-reduced-motion:reduce){.station[aria-pressed="true"] .live{animation:none}}
+@media (max-width:520px){.screen{aspect-ratio:4/3}.transport{gap:10px}.spacer{display:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Lanternreach · ambient receiver</div>
+      <h1>Lanternreach <span>Radio</span></h1>
+    </div>
+    <a class="btn play-game" href="https://puremunky.github.io/lanternreach/">◀ Play Lanternreach</a>
+    <p class="tagline">Six stations of generative space music. Every note is composed as it plays, so no two minutes are the same.</p>
+  </header>
+
+  <div class="screen" id="screen">
+    <canvas id="viz" aria-hidden="true"></canvas>
+    <div class="readout">
+      <div class="now" id="now"><small id="nowFreq">Standing by</small><span id="nowName">Pick a station</span></div>
+      <div class="chord" id="chordBox"><b id="chord">—</b><span id="chordMeta">&nbsp;</span></div>
+    </div>
+    <button class="start" id="start" type="button"><span>Tune in</span></button>
+  </div>
+
+  <div class="transport" role="group" aria-label="Playback">
+    <button class="btn primary" id="play" type="button">Play</button>
+    <button class="btn" id="prev" type="button" aria-label="Previous station">◀ Prev</button>
+    <button class="btn" id="next" type="button" aria-label="Next station">Next ▶</button>
+    <label class="vol" for="volume">Vol <input id="volume" type="range" min="0" max="100" value="70"></label>
+    <button class="btn" id="drift" type="button" aria-pressed="false" title="Change station every five minutes">Drift: off</button>
+    <span class="spacer"></span>
+    <span class="clock" id="clock">00:00</span>
+  </div>
+
+  <div class="dial" id="dial" role="group" aria-label="Stations"></div>
+
+  <footer>Synthesised live in your browser with Web Audio: oscillators, filtered noise, a generated reverb and a tape-style echo. Space toggles play, the arrow keys change station.</footer>
+</div>
+
+<script>
+(()=>{
+'use strict';
+// ---------- music theory ----------
+const hz=m=>440*Math.pow(2,(m-69)/12);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const rint=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+
+// ---------- audio graph ----------
+let A=null,master=null,analyser=null,noiseBuf=null;
+function initAudio(){
+  if(A)return;
+  A=new(window.AudioContext||window.webkitAudioContext)();
+  master=A.createGain();master.gain.value=volume();
+  analyser=A.createAnalyser();analyser.fftSize=512;analyser.smoothingTimeConstant=.82;
+  master.connect(analyser);analyser.connect(A.destination);
+  noiseBuf=A.createBuffer(1,A.sampleRate*3,A.sampleRate);
+  const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+}
+function reverb(seconds){
+  const len=Math.floor(A.sampleRate*seconds),ir=A.createBuffer(2,len,A.sampleRate);
+  for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2);}
+  const v=A.createConvolver();v.buffer=ir;return v;
+}
+// Each station gets a bus: dry, reverb send and a filtered feedback echo, faded in and out on switch.
+function makeBus(fx){
+  const bus=A.createGain(),mix=A.createGain(),verb=reverb(fx.verb),wet=A.createGain(),echo=A.createDelay(2),fb=A.createGain(),tone=A.createBiquadFilter(),send=A.createGain();
+  wet.gain.value=fx.wet??.9;echo.delayTime.value=fx.echo;fb.gain.value=fx.fb;tone.type='lowpass';tone.frequency.value=fx.echoTone??2400;send.gain.value=fx.send??.6;
+  mix.connect(bus);mix.connect(verb);verb.connect(wet);wet.connect(bus);
+  mix.connect(send);send.connect(echo);echo.connect(tone);tone.connect(fb);fb.connect(echo);tone.connect(bus);
+  bus.gain.value=0;bus.connect(master);
+  return{bus,mix};
+}
+
+// ---------- instruments ----------
+function pad(out,t,len,m,{voices=[['triangle',-6,1],['sawtooth',7,.35]],v=.035,a=3,r=4,cut=[500,1100,600],band=null}={}){
+  const f=A.createBiquadFilter(),g=A.createGain();
+  if(band){f.type='bandpass';f.Q.value=band.q;f.frequency.setValueAtTime(band.lo,t);f.frequency.linearRampToValueAtTime(band.hi,t+len*rnd(.35,.65));f.frequency.linearRampToValueAtTime(band.lo,t+len);}
+  else{f.type='lowpass';f.frequency.setValueAtTime(cut[0],t);f.frequency.linearRampToValueAtTime(cut[1],t+len/2);f.frequency.linearRampToValueAtTime(cut[2],t+len);}
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+a);g.gain.setValueAtTime(v,t+len-r);g.gain.linearRampToValueAtTime(0,t+len);
+  for(const[type,det,lv]of voices){const o=A.createOscillator(),og=A.createGain();o.type=type;o.frequency.value=hz(m);o.detune.value=det;og.gain.value=lv;o.connect(og);og.connect(f);o.start(t);o.stop(t+len+.1);}
+  f.connect(g);g.connect(out);
+}
+function drone(out,t,len,m,{type='sine',v=.08,a=4}={}){
+  const o=A.createOscillator(),g=A.createGain();o.type=type;o.frequency.value=hz(m);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+a);g.gain.linearRampToValueAtTime(0,t+len);o.connect(g);g.connect(out);o.start(t);o.stop(t+len+.1);
+}
+function bell(out,t,m,{v=.03,partials=[[1,1,2.6],[2.76,.35,1.2]]}={}){
+  for(const[mul,lv,dur]of partials){const o=A.createOscillator(),g=A.createGain();o.type='sine';o.frequency.value=hz(m)*mul;
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v*lv,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(out);o.start(t);o.stop(t+dur+.05);}
+}
+// frequency modulation: a glassy, icy strike whose brightness fades faster than its body
+function fm(out,t,m,{v=.035,ratio=3.5,index=500,dur=3}={}){
+  const f=hz(m),c=A.createOscillator(),mo=A.createOscillator(),mg=A.createGain(),g=A.createGain();
+  c.frequency.value=f;mo.frequency.value=f*ratio;mg.gain.setValueAtTime(index,t);mg.gain.exponentialRampToValueAtTime(1,t+dur*.5);
+  mo.connect(mg);mg.connect(c.frequency);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  c.connect(g);g.connect(out);c.start(t);mo.start(t);c.stop(t+dur+.05);mo.stop(t+dur+.05);
+}
+function pluck(out,t,m,{v=.05,dur=.7,type='sawtooth',cut=2600,floor=180}={}){
+  const o=A.createOscillator(),f=A.createBiquadFilter(),g=A.createGain();o.type=type;o.frequency.value=hz(m);
+  f.type='lowpass';f.Q.value=4;f.frequency.setValueAtTime(cut,t);f.frequency.exponentialRampToValueAtTime(floor,t+dur);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(f);f.connect(g);g.connect(out);o.start(t);o.stop(t+dur+.05);
+}
+function thump(out,t,{f=62,f2=36,v=.22,dur=.9}={}){
+  const o=A.createOscillator(),g=A.createGain();o.type='sine';o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(out);o.start(t);o.stop(t+dur+.05);
+}
+function wind(out,t,len,{lo=300,hi=1400,q=3,v=.025}={}){
+  const s=A.createBufferSource(),f=A.createBiquadFilter(),g=A.createGain();s.buffer=noiseBuf;s.loop=true;
+  f.type='bandpass';f.Q.value=q;f.frequency.setValueAtTime(lo,t);f.frequency.exponentialRampToValueAtTime(hi,t+len*rnd(.3,.7));f.frequency.exponentialRampToValueAtTime(lo,t+len);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+len*.4);g.gain.linearRampToValueAtTime(0,t+len);
+  s.connect(f);f.connect(g);g.connect(out);s.start(t,Math.random()*2);s.stop(t+len+.1);
+}
+
+// ---------- stations ----------
+// Each station: a bar length in seconds, a chord progression (name + MIDI notes) and a bar()
+// that schedules one bar of sound starting at audio time t.
+const STATIONS=[
+  {id:'lantern',freq:'88.1',band:'LY',name:'Lanternreach',color:'#ffb547',meta:'D Lydian · 8 s bars',
+   desc:'The in-game theme. Drifting pad chords over a low drone, with a few bells ringing out into a long echo.',
+   fx:{verb:4,echo:.55,fb:.38},bar:8,stars:.25,
+   prog:[['Dmaj9',[50,57,61,64,69]],['Bm11',[47,54,57,62,66]],['Gmaj7♯11',[43,50,54,57,61]],['A6sus',[45,52,57,59,64]]],
+   play(o,t,[_,c]){const len=this.bar+4;for(const m of c)pad(o,t,len,m);drone(o,t,len,c[0]-12,{v:.09});
+     for(let n=rint(2,5);n>0;n--)bell(o,t+Math.random()*this.bar,pick([69,71,73,74,76,78,81,83,85,86]),{v:rnd(.02,.045)});}},
+  {id:'nebula',freq:'92.6',band:'NB',name:'Nebula Drift',color:'#c99cff',meta:'F Dorian · 10 s bars',
+   desc:'Slow minor chords breathing through sweeping filters, almost like a distant choir, with the odd comet hiss passing overhead.',
+   fx:{verb:6,echo:.8,fb:.3,send:.35},bar:10,stars:.12,
+   prog:[['Fm9',[53,56,60,63,67]],['D♭maj7',[49,53,56,60,65]],['E♭6sus',[51,56,58,60,63]],['Cm7',[48,55,58,63,67]]],
+   play(o,t,[_,c]){const len=this.bar+5;
+     for(const m of c)pad(o,t,len,m,{voices:[['sawtooth',-9,.6],['sawtooth',8,.6],['triangle',0,.6]],v:.03,a:4,r:5,band:{lo:rnd(350,550),hi:rnd(1200,1900),q:6}});
+     drone(o,t,len,c[0]-24,{v:.07,type:'triangle',a:5});
+     if(Math.random()<.45)wind(o,t+rnd(1,5),rnd(4,7),{lo:250,hi:rnd(2500,4500),q:2.5,v:.03});}},
+  {id:'ice',freq:'97.3',band:'IC',name:'Ice Moon',color:'#62d5ff',meta:'E pentatonic · 6 s bars',
+   desc:'High glassy tones struck at random over an open fifth and thin wind. Sparse and very still.',
+   fx:{verb:7,echo:.75,fb:.45,echoTone:3200,send:.7},bar:6,stars:.06,
+   prog:[['E5',[40,47]],['E5 / B',[35,47]],['A(add9) / E',[40,45,47]],['E5',[40,47]]],
+   play(o,t,[_,c]){const len=this.bar+3;for(const m of c)drone(o,t,len,m,{v:.05,a:3});
+     wind(o,t,len,{lo:600,hi:1600,q:5,v:.012});
+     for(let n=rint(3,7);n>0;n--)fm(o,t+Math.random()*this.bar,pick([76,78,80,83,85,88,90,92]),{v:rnd(.015,.035),ratio:pick([3.5,2.01,4.2]),index:rnd(200,700),dur:rnd(2,4)});}},
+  {id:'orbit',freq:'101.9',band:'DO',name:'Deep Orbit',color:'#ff8a6b',meta:'A Phrygian · 12 s bars',
+   desc:'Dark, slow and low. A sub-bass pulse like a heartbeat, half-step shadows in the harmony, and a sonar ping that echoes away.',
+   fx:{verb:5,echo:.9,fb:.42,echoTone:1800,send:.5},bar:12,stars:.04,
+   prog:[['Am(add♭9)',[45,52,57,58,64]],['B♭maj7',[46,53,57,62]],['Gm / A',[45,55,58,62]],['F / A',[45,53,57,60]]],
+   play(o,t,[_,c]){const len=this.bar+5;
+     for(const m of c)pad(o,t,len,m,{voices:[['sawtooth',-5,.5],['triangle',6,1]],v:.032,a:5,r:5,cut:[220,620,260]});
+     drone(o,t,len,33,{v:.12,a:5});
+     for(let b=0;b<this.bar;b+=1.5)thump(o,t+b,{v:b%3===0?.2:.12});
+     bell(o,t+rnd(2,8),81,{v:.035,partials:[[1,1,1.6]]});}},
+  {id:'beacon',freq:'104.7',band:'SB',name:'Signal Beacon',color:'#72e3a0',meta:'A minor · 96 bpm',
+   desc:'A steady pulse of plucked synth arpeggios with the filter breathing open and closed, over soft chords. The one to fly by.',
+   fx:{verb:3,echo:.469,fb:.36,send:.45},bar:5,stars:.6,
+   prog:[['Am',[57,60,64,69]],['Fmaj7',[53,57,60,64]],['C',[48,55,60,64]],['G6',[55,59,62,64]]],
+   play(o,t,[_,c]){const len=this.bar+2,step=60/96/2;
+     for(const m of c)pad(o,t,len,m,{v:.018,a:1.2,r:2,cut:[400,900,500]});drone(o,t,len,c[0]-12,{v:.06,type:'triangle',a:1});
+     const notes=[...c,c[1]+12,c[2]+12];let idx=rint(0,notes.length-1);
+     for(let i=0;i<16;i++){if(i>0&&Math.random()<.12)continue;idx=Math.max(0,Math.min(notes.length-1,idx+pick([-1,1,1,2,-2])));
+       const sweep=1200+1800*(0.5+0.5*Math.sin(i/16*Math.PI*2));pluck(o,t+i*step,notes[idx],{v:i%4===0?.06:.04,dur:.45,cut:sweep});}}},
+  {id:'sails',freq:'107.5',band:'SS',name:'Solar Sails',color:'#f2d36b',meta:'E Mixolydian · 8 s bars',
+   desc:'Warm and bright. Rising harp-like arpeggios over wide major chords, like catching the light past a star.',
+   fx:{verb:4,echo:.375,fb:.28,send:.4},bar:8,stars:.35,
+   prog:[['Emaj9',[52,56,59,63,66]],['D / E',[50,54,57,62,64]],['A(add9) / E',[52,57,59,61,64]],['Bsus4',[47,52,54,59,64]]],
+   play(o,t,[_,c]){const len=this.bar+3;
+     for(const m of c)pad(o,t,len,m,{voices:[['triangle',-4,1],['sine',5,.6]],v:.03,a:2,r:3,cut:[700,1500,800]});drone(o,t,len,c[0]-12,{v:.07,a:2});
+     const up=[...c.map(m=>m+12),c[0]+24,c[2]+24];
+     for(const start of [0,this.bar/2])up.forEach((m,i)=>pluck(o,t+start+i*.16+rnd(0,.03),m,{type:'triangle',v:.035,dur:1.6,cut:4200,floor:900}));}}
+];
+
+// ---------- scheduler ----------
+let cur=null,ahead=null,timer=null,startedAt=0,chords=[];
+function tune(i,{auto=false}={}){
+  initAudio();
+  const s=STATIONS[(i+STATIONS.length)%STATIONS.length];
+  if(cur&&cur.s===s)return;
+  if(cur){const old=cur;old.bus.bus.gain.setTargetAtTime(0,A.currentTime,.9);setTimeout(()=>old.bus.bus.disconnect(),8000);}
+  const bus=makeBus(s.fx);bus.bus.gain.setTargetAtTime(1,A.currentTime,1.2);
+  cur={s,bus,next:A.currentTime+.15,bar:0};chords=[];startedAt=A.currentTime;
+  document.documentElement.style.setProperty('--accent',s.color);
+  $('nowFreq').textContent=`${s.freq} ${s.band} · ${s.meta}`;$('nowName').textContent=s.name;
+  for(const b of document.querySelectorAll('.station'))b.setAttribute('aria-pressed',b.dataset.id===s.id);
+  save('station',s.id);driftAt=A.currentTime+DRIFT;
+  if(!auto&&A.state!=='running')resume();
+  schedule();
+}
+function schedule(){
+  if(!cur||A.state!=='running')return;
+  while(cur.next<A.currentTime+1.5){
+    const ch=cur.s.prog[cur.bar%cur.s.prog.length];cur.s.play(cur.bus.mix,cur.next,ch);
+    chords.push({t:cur.next,name:ch[0],bar:cur.bar+1});cur.next+=cur.s.bar;cur.bar++;
+  }
+  if(drifting&&A.currentTime>driftAt)tune(STATIONS.indexOf(cur.s)+1,{auto:true});
+}
+function resume(){initAudio();A.resume();if(!timer)timer=setInterval(schedule,250);if(!cur)tune(stationIndex());$('start').hidden=true;$('play').textContent='Pause';schedule();}
+function pause(){if(A)A.suspend();$('play').textContent='Play';}
+
+// ---------- drift: hop to the next station every few minutes ----------
+const DRIFT=300;let drifting=false,driftAt=0;
+
+// ---------- prefs (per browser; the page works without them) ----------
+function load(k,d){try{const v=localStorage.getItem('lr-radio-'+k);return v==null?d:v;}catch(e){return d;}}
+function save(k,v){try{localStorage.setItem('lr-radio-'+k,v);}catch(e){}}
+const volume=()=>Math.pow($('volume').value/100,1.6)*.9;
+const stationIndex=()=>Math.max(0,STATIONS.findIndex(s=>s.id===load('station','lantern')));
+
+// ---------- UI ----------
+const $=id=>document.getElementById(id);
+$('dial').innerHTML=STATIONS.map(s=>`<button class="station" type="button" data-id="${s.id}" aria-pressed="false" style="--c:${s.color}">
+  <span class="freq">${s.freq}<i>${s.band} MHz</i></span>
+  <span><span class="st-name">${s.name}</span><span class="live" aria-hidden="true"></span><br><span class="st-meta">${s.meta}</span></span>
+  <p class="st-desc">${s.desc}</p></button>`).join('');
+$('dial').addEventListener('click',e=>{const b=e.target.closest('.station');if(b)tune(STATIONS.findIndex(s=>s.id===b.dataset.id));});
+$('start').onclick=()=>resume();
+$('play').onclick=()=>A&&A.state==='running'?pause():resume();
+$('prev').onclick=()=>tune((cur?STATIONS.indexOf(cur.s):stationIndex())-1);
+$('next').onclick=()=>tune((cur?STATIONS.indexOf(cur.s):stationIndex())+1);
+$('volume').value=load('volume','70');
+$('volume').oninput=()=>{save('volume',$('volume').value);if(master)master.gain.setTargetAtTime(volume(),A.currentTime,.05);};
+$('drift').onclick=()=>{drifting=!drifting;$('drift').setAttribute('aria-pressed',drifting);$('drift').textContent=`Drift: ${drifting?'5 min':'off'}`;if(A)driftAt=A.currentTime+DRIFT;};
+addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea'))return;
+  if(e.key===' '&&!e.target.closest('button')){e.preventDefault();$('play').click();}
+  else if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();$('next').click();}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();$('prev').click();}
+});
+{const s=STATIONS[stationIndex()];document.documentElement.style.setProperty('--accent',s.color);
+ $('nowFreq').textContent=`${s.freq} ${s.band} · ${s.meta}`;$('nowName').textContent=s.name;
+ for(const b of document.querySelectorAll('.station'))b.setAttribute('aria-pressed',b.dataset.id===s.id);}
+
+// ---------- viewscreen: parallax stars + a spectrum ring that breathes with the music ----------
+const cv=$('viz'),g=cv.getContext('2d'),reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const STARS=Array.from({length:220},()=>({x:Math.random(),y:Math.random(),z:Math.random()*.9+.1}));
+let W=0,H=0,DPR=1,last=performance.now(),travel=0,bins=null;
+function size(){const r=cv.getBoundingClientRect();DPR=Math.min(2,devicePixelRatio||1);W=r.width;H=r.height;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);}
+new ResizeObserver(size).observe(cv);size();
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  const playing=A&&A.state==='running',s=cur?cur.s:STATIONS[stationIndex()],col=s.color;
+  if(!reduce)travel+=dt*(playing?s.stars:.03);
+  g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle='#060911';g.fillRect(0,0,W,H);
+  const glow=g.createRadialGradient(W*.5,H*.45,0,W*.5,H*.45,Math.max(W,H)*.6);glow.addColorStop(0,col+'22');glow.addColorStop(1,'rgba(6,9,17,0)');g.fillStyle=glow;g.fillRect(0,0,W,H);
+  for(const st of STARS){const x=((st.x-travel*st.z*.12)%1+1)%1*W,y=st.y*H;g.globalAlpha=.25+st.z*.6;g.fillStyle='#dfe8ff';const r=st.z*1.4;g.fillRect(x,y,r,r);}
+  g.globalAlpha=1;
+  // spectrum ring
+  const cx=W*.5,cy=H*.44,R=Math.min(W,H)*.2;let level=0;
+  if(analyser){if(!bins)bins=new Uint8Array(analyser.frequencyBinCount);analyser.getByteFrequencyData(bins);}
+  const N=96;g.strokeStyle=col;g.lineWidth=2;g.beginPath();
+  for(let i=0;i<=N;i++){const k=i%N,b=bins?bins[2+Math.floor((k<N/2?k:N-k)/(N/2)*90)]/255:0;level+=b;
+    const a=k/N*Math.PI*2-Math.PI/2,rr=R+(playing?b*R*.55:0)+Math.sin(now/1400+k*.4)*1.5,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;i?g.lineTo(x,y):g.moveTo(x,y);}
+  g.globalAlpha=.9;g.stroke();level/=N;
+  g.globalAlpha=.25+level*.8;g.fillStyle=col;g.beginPath();g.arc(cx,cy,R*.18+level*R*.25,0,Math.PI*2);g.fill();
+  g.globalAlpha=.35;g.lineWidth=1;g.beginPath();g.arc(cx,cy,R*.62,0,Math.PI*2);g.stroke();g.globalAlpha=1;
+  // readouts
+  if(A&&cur){
+    while(chords.length>1&&chords[1].t<=A.currentTime)chords.shift();
+    const c=chords[0];if(c&&c.t<=A.currentTime+.05){$('chord').textContent=c.name;$('chordMeta').textContent=`bar ${c.bar}`;}
+    const sec=Math.max(0,Math.floor(A.currentTime-startedAt));$('clock').textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
+  }
+}
+requestAnimationFrame(frame);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
+})();
+</script>
