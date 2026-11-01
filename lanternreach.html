@@ -115,6 +115,7 @@ kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line-hi);pad
       <div class="row" style="justify-content:flex-start">
         <button class="btn primary" id="newGame" type="button">Launch new charter</button>
         <button class="btn" id="contGame" type="button" hidden>Continue</button>
+        <button class="btn hints-btn" type="button" aria-pressed="true">Hints: on</button>
         <span id="contInfo" class="muted mono" style="font-size:13px"></span>
       </div>
       <div class="keys" aria-label="Controls">
@@ -155,7 +156,7 @@ kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line-hi);pad
         <div><kbd>L</kbd> land</div><div><kbd>M</kbd> map</div><div><kbd>J</kbd> jump</div><div><kbd>B</kbd> board or scan</div>
       </div>
       <p class="desc muted">To jump, plot a route on the map, then fly outside the dashed jump ring and press J. Each jump burns one unit of fuel and takes a day. Ships drop to a disabled drift when their hull is badly damaged; fly alongside slowly and press B to board. Signals on your radar pulse amber: fly to them and press B to scan.</p>
-      <div class="row" style="justify-content:flex-start"><button class="btn primary" id="resume" type="button">Resume</button><button class="btn" id="quit" type="button">Quit to title</button></div>
+      <div class="row" style="justify-content:flex-start"><button class="btn primary" id="resume" type="button">Resume</button><button class="btn" id="quit" type="button">Quit to title</button><button class="btn hints-btn" type="button" aria-pressed="true">Hints: on</button></div>
     </div>
   </div>
 </div>
@@ -360,6 +361,10 @@ function restore(d){
 }
 function save(){lastSave=JSON.stringify(serialize());try{localStorage.setItem(SAVE_KEY,lastSave);}catch(e){}}
 function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
+// Hints: coaching text, price labels and job pairing. Off leaves the player to work it out.
+const HINTS_KEY='lanternreach-hints';
+let hints=true;try{hints=localStorage.getItem(HINTS_KEY)!=='off';}catch(e){}
+const tip=t=>hints?' '+t:'';
 function msg(text,tone){if(!G)return;G.msgs.push({text,tone,t:performance.now()});if(G.msgs.length>6)G.msgs.shift();}
 
 // ---------- graph helpers ----------
@@ -534,7 +539,7 @@ function fireGuns(s){
 }
 function fireMissile(s,tgt){
   if(!s.st.racks||s.rcd>0)return;
-  if(s.player){if(G.p.ammo<=0){msg('No seeker missiles left.','bad');s.rcd=.6;return;}if(!tgt){msg('Select a target first (Tab).');s.rcd=.4;return;}G.p.ammo--;}
+  if(s.player){if(G.p.ammo<=0){msg('No seeker missiles left.','bad');s.rcd=.6;return;}if(!tgt){msg('No target selected.'+tip('Press Tab to cycle targets.'));s.rcd=.4;return;}G.p.ammo--;}
   s.rcd=s.player?.8:2.5;
   S.shots.push({x:s.x,y:s.y,vx:s.vx+Math.cos(s.a)*120,vy:s.vy+Math.sin(s.a)*120,a:s.a,life:MISSILE.life,o:MISSILE,owner:s,missile:true,tgt});
 }
@@ -674,8 +679,8 @@ function tryLand(){
   let best=null,bd=1e9;for(const p of ports){const d=Math.hypot(p.x-me.x,p.y-me.y)-p.size;if(d<bd){bd=d;best=p;}}
   S.nav=best;const sp=Math.hypot(me.vx,me.vy);
   if(bd<40&&sp<150)landAt(best);
-  else if(bd<40)msg('Too fast to land. Hold S to turn retro and burn.');
-  else msg(`Nav set to ${best.name}. Fly over it slowly and press L.`);
+  else if(bd<40)msg('Too fast to land.'+tip('Hold S to turn retro and burn.'));
+  else msg(`Nav set to ${best.name}.`+tip('Fly over it slowly and press L.'));
 }
 function landAt(p){
   G.port=p.i;mode='landed';
@@ -690,15 +695,15 @@ function takeOff(){
 }
 function tryJump(){
   const me=S.me;
-  if(!G.route.length){msg('No route plotted. Open the map (M) and choose a destination.');return;}
+  if(!G.route.length){msg('No route plotted.'+tip('Open the map (M) and choose a destination.'));return;}
   const next=G.route[0];
-  if(!S.sys.links.includes(next)){G.route=[];msg('Route no longer valid. Plot it again on the map.','bad');return;}
+  if(!S.sys.links.includes(next)){G.route=[];msg('Route no longer valid.'+tip('Plot it again on the map.'),'bad');return;}
   if(G.p.fuel<1){
     if(G.p.credits>=1500){G.p.credits-=1500;G.p.fuel=1;msg('A fuel tug sells you one jump of fuel for 1,500 cr.');}
     else{G.p.fuel=1;msg('A passing hauler takes pity and transfers one jump of fuel.');}
     return;
   }
-  if(Math.hypot(me.x,me.y)<JUMP_DIST){msg(`Too deep in ${S.sys.name}'s gravity well. Fly past the dashed ring.`);return;}
+  if(Math.hypot(me.x,me.y)<JUMP_DIST){msg(`Too deep in ${S.sys.name}'s gravity well.`+tip('Fly past the dashed ring.'));return;}
   const to=G.gal.systems[next];S.jump={t:0,to:next,ang:Math.atan2(to.y-S.sys.y,to.x-S.sys.x)};
 }
 function doJump(){
@@ -711,7 +716,7 @@ function tryBoard(){
   const me=S.me,sys=S.sys;
   if(sys.signal&&!G.collected.has(sys.id)&&Math.hypot(sys.signal.x-me.x,sys.signal.y-me.y)<110){scanSignal();return;}
   const t=S.target&&S.target.disabled?S.target:S.ships.find(s=>s.disabled&&!s.boarded&&Math.hypot(s.x-me.x,s.y-me.y)<90);
-  if(!t){msg('Nothing to board. Disable a ship, or fly close to a signal.');return;}
+  if(!t){msg('Nothing to board.'+tip('Disable a ship, or fly close to a signal.'));return;}
   if(t.boarded){msg('Already stripped.');return;}
   const d=Math.hypot(t.x-me.x,t.y-me.y),rv=Math.hypot(t.vx-me.vx,t.vy-me.vy);
   if(d>90){msg('Move closer to board.');return;}
@@ -818,7 +823,7 @@ function drawHUD(){
   cx.fillText(`FUEL ${G.p.fuel}/${st.fuel}   CARGO ${cargoUsed()}/${st.cargo}t${st.racks?`   MSL ${G.p.ammo}`:''}`,bx,by+64);
   const nx=G.route.length?G.gal.systems[G.route[0]]:null;
   if(nx){const ready=Math.hypot(me.x,me.y)>=JUMP_DIST;cx.fillStyle=ready?'#ffb547':'#8a96ae';cx.fillText(`NEXT ▸ ${nx.name.toUpperCase()}  ${ready?'[J] READY':'· CLEAR THE RING'}  (${G.route.length} jump${G.route.length>1?'s':''})`,bx,by+82);}
-  else{cx.fillStyle='#5d6880';cx.fillText('NO ROUTE · [M] MAP',bx,by+82);}
+  else{cx.fillStyle='#5d6880';cx.fillText(hints?'NO ROUTE · [M] MAP':'NO ROUTE',bx,by+82);}
   // radar
   const rr=Math.min(72,W*.16),rx=W-pad-rr,ry=pad+rr,sc=rr/2200;
   cx.fillStyle='rgba(11,16,29,.75)';cx.strokeStyle='#243150';cx.lineWidth=1;cx.beginPath();cx.arc(rx,ry,rr,0,TAU);cx.fill();cx.stroke();
@@ -899,6 +904,11 @@ document.querySelectorAll('[data-key]').forEach(b=>{
 });
 function pause(on){if(on){mode='paused';$('pause').hidden=false;$('resume').focus();}else{$('pause').hidden=true;mode='space';}}
 $('resume').onclick=()=>pause(false);
+function setHints(on){hints=on;try{localStorage.setItem(HINTS_KEY,on?'on':'off');}catch(e){}
+  for(const b of document.querySelectorAll('.hints-btn')){b.textContent=`Hints: ${on?'on':'off'}`;b.setAttribute('aria-pressed',on);}
+  if(G&&!landEl.hidden)renderLand();if(G&&!mapEl.hidden){drawMap();renderMapInfo();}needsDraw=true;}
+for(const b of document.querySelectorAll('.hints-btn'))b.onclick=()=>setHints(!hints);
+setHints(hints);
 $('quit').onclick=()=>{$('pause').hidden=true;showTitle();};
 
 // ---------- port screen ----------
@@ -923,7 +933,7 @@ function renderLand(){
     const fuelCost=(st.fuel-G.p.fuel)*120,dmg=Math.max(0,st.hull-G.p.hull),repCost=Math.round(dmg*9);
     const repTxt=f>=0?`${G.rep[f]>=10?'<span class="c-good">Respected</span>':G.rep[f]<0?'<span class="c-bad">Suspect</span>':'Clean'} (${G.rep[f]})`:'No authority here';
     html=`<p class="desc">${esc(port.desc)}</p>
-    ${G.day===0&&G.stats.jumps===0?`<div class="card" style="border-color:var(--amber)"><h3 class="c-amber">First flight</h3><p class="desc muted">Check the Trade tab for cheap goods, or take a delivery from Jobs. Open the map (M) once in space to plot a route, fly outside the dashed ring, and press J. Exploring new systems earns survey data you can sell at any port.</p></div>`:''}
+    ${hints&&G.day===0&&G.stats.jumps===0?`<div class="card" style="border-color:var(--amber)"><h3 class="c-amber">First flight</h3><p class="desc muted">Check the Trade tab for cheap goods, or take a delivery from Jobs. Open the map (M) once in space to plot a route, fly outside the dashed ring, and press J. Exploring new systems earns survey data you can sell at any port.</p></div>`:''}
     <div class="grid2">
       <div class="card"><h3>Services</h3>
         <div class="row"><span>Refuel to ${st.fuel} jumps</span><button class="btn sm" data-act="refuel" ${fuelCost===0||G.p.credits<fuelCost?'disabled':''}>${fuelCost?fmt(fuelCost)+' cr':'Full'}</button></div>
@@ -936,10 +946,10 @@ function renderLand(){
     </div>`;
   }else if(landTab==='trade'){
     const free=st.cargo-cargoUsed();
-    html=`<div class="row"><span class="muted">Prices shift daily. Labels compare against the galactic average.</span><span class="mono">Free hold: ${free}t</span></div>
+    html=`<div class="row"><span class="muted">Prices shift daily.${hints?' Labels compare against the galactic average.':''}</span><span class="mono">Free hold: ${free}t</span></div>
     <div class="scroll-x"><table><thead><tr><th>Commodity</th><th class="r">Price</th><th></th><th class="r">In hold</th><th class="r">Trade</th></tr></thead><tbody>${GOODS.map(g=>{
       const p=price(port,g.id),rel=p/g.base,have=G.p.cargo[g.id]||0,canBuy=Math.min(free,Math.floor(G.p.credits/p));
-      const tag=rel<.8?'<span class="chip c-good">Cheap</span>':rel>1.2?'<span class="chip c-amber">High</span>':'';
+      const tag=!hints?'':rel<.8?'<span class="chip c-good">Cheap</span>':rel>1.2?'<span class="chip c-amber">High</span>':'';
       return `<tr><td>${g.name}</td><td class="r num">${fmt(p)}</td><td>${tag}</td><td class="r num">${have||'—'}</td><td><div class="acts">
         <button class="btn sm" data-act="buy" data-g="${g.id}" data-n="1" ${canBuy<1?'disabled':''}>Buy 1</button><button class="btn sm" data-act="buy" data-g="${g.id}" data-n="${canBuy}" ${canBuy<1?'disabled':''}>Max</button>
         <button class="btn sm" data-act="sell" data-g="${g.id}" data-n="1" ${have<1?'disabled':''}>Sell 1</button><button class="btn sm" data-act="sell" data-g="${g.id}" data-n="${have}" ${have<1?'disabled':''}>All</button></div></td></tr>`;}).join('')}</tbody></table></div>`;
@@ -962,8 +972,8 @@ function renderLand(){
       <button class="btn ${ok?'primary':''}" data-act="hbuy" data-h="${h.id}" ${ok?'':'disabled'}>${mine?'Owned':cost<=0?`Swap (+${fmt(-cost)} cr)`:`Buy for ${fmt(cost)} cr`}</button></div>`;}).join('')}</div>`;
   }else{
     const av=availableMissions(sys,port),jv=jobView=planJobs(av),J=id=>jv.find(j=>j.m.id===id);
-    const pairs=j=>j.fits.length?`<span class="chip c-cyan">Pairs with ${j.fits.join(', ')}</span>`:'';
-    html=`<div class="jobmap"><canvas id="jobmap" aria-label="Map of job destinations"></canvas><div class="jobmap-key"><span class="c-amber">■ Your jobs (A, B…)</span><span class="c-cyan">● Job board (1, 2…)</span><span>Hover or tap a job to trace its route</span></div></div>
+    const pairs=j=>hints&&j.fits.length?`<span class="chip c-cyan">Pairs with ${j.fits.join(', ')}</span>`:'';
+    html=`<div class="jobmap"><canvas id="jobmap" aria-label="Map of job destinations"></canvas><div class="jobmap-key"><span class="c-amber">■ Your jobs (A, B…)</span><span class="c-cyan">● Job board (1, 2…)</span>${hints?'<span>Hover or tap a job to trace its route</span>':''}</div></div>
       <h3>Active jobs</h3>${G.missions.length?G.missions.map(m=>`<div class="job" data-m="${m.id}"><strong><span class="jtag c-amber">${J(m.id).tag}</span>${esc(m.title)}</strong><span class="pay">${fmt(m.reward)} cr</span><p>${esc(m.desc)} Due day ${m.deadline}.</p><button class="btn sm" data-act="abandon" data-m="${m.id}">Abandon</button></div>`).join(''):'<p class="muted">None.</p>'}
       <h3>Job board</h3>${av.length?av.map(m=>`<div class="job" data-m="${m.id}"><strong><span class="jtag c-cyan">${J(m.id).tag}</span>${esc(m.title)}</strong><span class="pay">${fmt(m.reward)} cr</span><p>${esc(m.desc)} Due day ${m.deadline}.${m.tons?` Needs ${m.tons}t.`:''} ${pairs(J(m.id))}</p><button class="btn sm" data-act="accept" data-m="${m.id}" ${m.tons&&cargoUsed()+m.tons>st.cargo?'disabled':''}>Accept</button></div>`).join(''):'<p class="muted">No work posted today. Check back tomorrow.</p>'}`;
   }
@@ -997,7 +1007,7 @@ function drawJobMap(){
   for(const id of K.known)for(const n of sys[id].links)if(n>id&&K.known.has(n)&&K.edgeKnown(id,n)){const a=P(sys[id]),b=P(sys[n]);if(on(a)||on(b)){g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();}}
   g.fillStyle='#3a4b72';for(const id of K.known){const p=P(sys[id]);if(on(p)){g.beginPath();g.arc(...p,2.5,0,TAU);g.fill();}}
   const hl=jobView.find(j=>j.m.id===jobHL);
-  const lit=j=>!hl||j===hl||hl.fits.includes(j.tag);
+  const lit=j=>!hl||j===hl||hints&&hl.fits.includes(j.tag);
   for(const j of [...jobView].sort((a,b)=>(a===hl)-(b===hl))){
     if(!j.path.length)continue;
     g.strokeStyle=j.active?'#ffb547':'#62d5ff';g.globalAlpha=j===hl?1:lit(j)?.55:.15;g.lineWidth=j===hl?3:1.75;
@@ -1079,7 +1089,7 @@ function drawMap(){
 }
 function renderMapInfo(){
   const el=$('mapinfo');
-  if(mapSel==null){el.innerHTML=`<div class="eyebrow">Navigation</div><p class="desc muted">Select a system to see what you know about it and plot a course. Filled dots are systems you have visited; hollow ones are known but unexplored. Amber squares mark job destinations.</p><div class="eyebrow">Legend</div>${G.gal.factions.map(f=>`<div class="row" style="justify-content:flex-start"><span style="width:10px;height:10px;border-radius:50%;background:${f.color};display:inline-block"></span><span>${esc(f.name)}${isWanted(f.id)?' <span class="chip c-bad">Wanted</span>':''}</span></div>`).join('')}<div class="row" style="justify-content:flex-start"><span style="width:10px;height:10px;border-radius:50%;background:#9aa3b5;display:inline-block"></span><span>Unclaimed space</span></div>`;return;}
+  if(mapSel==null){el.innerHTML=`${hints?'<div class="eyebrow">Navigation</div><p class="desc muted">Select a system to see what you know about it and plot a course. Filled dots are systems you have visited; hollow ones are known but unexplored. Amber squares mark job destinations.</p>':''}<div class="eyebrow">Legend</div>${G.gal.factions.map(f=>`<div class="row" style="justify-content:flex-start"><span style="width:10px;height:10px;border-radius:50%;background:${f.color};display:inline-block"></span><span>${esc(f.name)}${isWanted(f.id)?' <span class="chip c-bad">Wanted</span>':''}</span></div>`).join('')}<div class="row" style="justify-content:flex-start"><span style="width:10px;height:10px;border-radius:50%;background:#9aa3b5;display:inline-block"></span><span>Unclaimed space</span></div>`;return;}
   const s=G.gal.systems[mapSel],vis=G.visited.has(s.id),K=mapK,named=vis||K.base.has(s.id);
   const {dist,prev}=bfs(G.loc,K.nbr),path=pathTo(prev,G.loc,s.id),d=dist.get(s.id);
   const danger=s.danger<.3?'<span class="c-good">Low</span>':s.danger<.6?'<span class="c-amber">Moderate</span>':'<span class="c-bad">High</span>';
