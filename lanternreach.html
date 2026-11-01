@@ -65,6 +65,14 @@ td .acts{display:flex;gap:4px;justify-content:flex-end}
 #jobmap{display:block;width:100%;height:240px}
 .jobmap-key{display:flex;flex-wrap:wrap;gap:4px 16px;padding:6px 10px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
 @media (max-width:720px){#jobmap{height:180px}}
+.text-in{background:var(--void);border:1px solid var(--line-hi);color:var(--ink);font:inherit;padding:6px 10px;width:min(220px,100%)}
+.swatch{width:26px;height:26px;border:2px solid var(--line-hi);cursor:pointer;padding:0}
+.swatch[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:2px}
+.log{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.log div{display:flex;gap:10px}.log .mono{color:var(--dim);min-width:44px}
+.ledger{display:grid;grid-template-columns:1fr auto;gap:0 12px;font-size:13px;margin-top:4px}
+details summary{cursor:pointer;font-size:14px}
+.seen{font-size:12px;white-space:nowrap}
 .title-dock{width:min(760px,100%)}
 .title-dock .dock-body{gap:18px;padding:26px 24px}
 .lede{font-size:17px;max-width:60ch;margin:0;color:var(--ink)}
@@ -114,6 +122,7 @@ kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line-hi);pad
       </div>
       <div class="row" style="justify-content:flex-start">
         <button class="btn primary" id="newGame" type="button">Launch new charter</button>
+        <button class="btn" id="daily" type="button">Daily galaxy</button>
         <button class="btn" id="contGame" type="button" hidden>Continue</button>
         <button class="btn hints-btn" type="button" aria-pressed="true">Hints: on</button>
         <span id="contInfo" class="muted mono" style="font-size:13px"></span>
@@ -166,6 +175,7 @@ kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line-hi);pad
     <div class="dock-body">
       <div class="eyebrow c-bad">Ship lost</div><h2 id="deadTitle">Your ship broke apart</h2>
       <p class="desc" id="deadText"></p>
+      <div class="log" id="deadLog"></div>
       <div class="row" style="justify-content:flex-start"><button class="btn primary" id="restore" type="button">Restore last landing</button><button class="btn" id="toTitle" type="button">Back to title</button></div>
     </div>
   </div>
@@ -184,6 +194,7 @@ const pick=(r,a)=>a[Math.floor(r()*a.length)];
 const rint=(r,a,b)=>a+Math.floor(r()*(b-a+1));
 const angDiff=(a,b)=>{let d=(b-a)%TAU;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;return d;};
 const fmt=n=>Math.round(n).toLocaleString('en-US');
+const plural=(n,w)=>`${fmt(n)} ${w}${n===1?'':'s'}`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $=id=>document.getElementById(id);
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -192,7 +203,9 @@ const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const GOODS=[
   {id:'food',name:'Food',base:60},{id:'ice',name:'Water Ice',base:45},{id:'ore',name:'Ore',base:95},
   {id:'alloy',name:'Alloys',base:190},{id:'mach',name:'Machinery',base:280},{id:'med',name:'Medicine',base:360},
-  {id:'elec',name:'Electronics',base:450},{id:'lux',name:'Luxuries',base:640}];
+  {id:'elec',name:'Electronics',base:450},{id:'lux',name:'Luxuries',base:640},
+  {id:'arms',name:'Weapons',base:520,contra:true},{id:'stims',name:'Stims',base:300,contra:true}];
+const LEGAL=GOODS.filter(g=>!g.contra);
 const KINDS=['Agri world','Industrial hub','Mining colony','Research station','Trade station','Frontier outpost','Resort world'];
 const STATION=new Set(['Research station','Trade station']);
 const KIND_MOD={
@@ -203,6 +216,12 @@ const KIND_MOD={
   'Trade station':{food:1.05,ice:1,ore:1,alloy:1,mach:1,med:1,elec:1,lux:.85},
   'Frontier outpost':{food:1.35,ice:.7,ore:.8,alloy:1.3,mach:1.45,med:1.55,elec:1.35,lux:1.4},
   'Resort world':{food:1.2,ice:1.1,ore:1.3,alloy:1.2,mach:1.15,med:1.05,elec:1.05,lux:.58}};
+const CONTRA_MOD={'Agri world':{arms:1.2,stims:.9},'Industrial hub':{arms:.75,stims:1.1},'Mining colony':{arms:1.1,stims:1.2},'Research station':{arms:1.2,stims:.7},
+  'Trade station':{arms:1,stims:1},'Frontier outpost':{arms:.8,stims:1.1},'Resort world':{arms:1.3,stims:.8}};
+for(const k in CONTRA_MOD)Object.assign(KIND_MOD[k],CONTRA_MOD[k]);
+const PAINTS=['#ffb547','#62d5ff','#72e3a0','#ff6262','#c99cff','#e1e7f2'];
+const SHORT={food:'Crop blight',ice:'Water crisis',ore:'Smelter boom',alloy:'Shipyard expansion',mach:'Factory fire',elec:'Data-core failure',med:'Plague outbreak',lux:'Festival season'};
+const GLUT={food:'Bumper harvest',ice:'Comet capture',ore:'Rich ore strike',alloy:'Foundry surplus',mach:'Factory overrun',elec:'Chip surplus',med:'Pharma surplus',lux:'Luxury market crash'};
 const KIND_COLORS={
   'Agri world':['#25563f','#3f8a50','#2a5f8a','#a8c48a'],'Industrial hub':['#4f4b48','#7f6248','#36322f','#c08850'],
   'Mining colony':['#6a3f2a','#9a5a36','#4c3224','#c89060'],'Frontier outpost':['#a89a80','#d0c8b8','#7a8a98','#c0b090'],
@@ -310,8 +329,9 @@ function genGalaxy(seed){
       const tech=clamp(rint(r,1,3)+(f>=0?1:0)+(kind==='Research station'?1:0)-(kind==='Frontier outpost'?1:0),1,5);
       const ang=r()*TAU,size=station?34+r()*10:60+r()*70;
       const lines=KIND_TEXT[kind];
-      const noise={},phase={};for(const g of GOODS){noise[g.id]=.86+r()*.28;phase[g.id]=r()*TAU;}
-      s.ports.push({i,kind,station,tech,size,name:station?`${genName(r)} ${pick(r,['Station','Ring','Hub','Platform'])}`:genName(r),
+      const noise={},phase={};for(const g of LEGAL){noise[g.id]=.86+r()*.28;phase[g.id]=r()*TAU;}
+      const cr=rngFor('contra',seed,s.id,i);for(const g of GOODS)if(g.contra){noise[g.id]=.86+cr()*.28;phase[g.id]=cr()*TAU;}
+      s.ports.push({i,sys:s.id,kind,station,tech,size,name:station?`${genName(r)} ${pick(r,['Station','Ring','Hub','Platform'])}`:genName(r),
         x:Math.cos(ang)*orbit,y:Math.sin(ang)*orbit,desc:`${lines[0]} ${pick(r,lines.slice(1))}`,
         shipyard:tech>=2&&(kind==='Industrial hub'||r()<.4),outfitter:tech>=2||r()<.4,noise,phase});
       orbit+=size+260+r()*240;
@@ -322,8 +342,9 @@ function genGalaxy(seed){
   // home: best-equipped port in the most lawful faction's space
   let home=null;
   for(const s of systems)if(s.faction===0)for(const p of s.ports){const sc=p.tech*10-Math.hypot(s.x-fseeds[0].x,s.y-fseeds[0].y)/40;if(!home||sc>home.sc)home={s,p,sc};}
-  if(!home){const s=fseeds[0];if(!s.ports.length)s.ports.push({i:0,kind:'Trade station',station:true,tech:3,size:40,name:`${genName(r)} Station`,x:420,y:-160,desc:KIND_TEXT['Trade station'][0]+' '+KIND_TEXT['Trade station'][1],noise:Object.fromEntries(GOODS.map(g=>[g.id,1])),phase:Object.fromEntries(GOODS.map(g=>[g.id,r()*TAU]))});home={s,p:s.ports[0]};}
+  if(!home){const s=fseeds[0];if(!s.ports.length)s.ports.push({i:0,sys:s.id,kind:'Trade station',station:true,tech:3,size:40,name:`${genName(r)} Station`,x:420,y:-160,desc:KIND_TEXT['Trade station'][0]+' '+KIND_TEXT['Trade station'][1],noise:Object.fromEntries(GOODS.map(g=>[g.id,1])),phase:Object.fromEntries(GOODS.map(g=>[g.id,g.contra?0:r()*TAU]))});home={s,p:s.ports[0]};}
   home.p.tech=Math.max(3,home.p.tech);home.p.shipyard=true;home.p.outfitter=true;home.s.danger=Math.min(home.s.danger,.15);home.s.signal=null;
+  const br=rngFor('bans',seed);for(const f of factions)f.bans=GOODS.filter(g=>g.contra&&br()<f.law*.9).map(g=>g.id);
   return {seed,systems,factions,home:home.s.id,homePort:home.p.i};
 }
 
@@ -346,18 +367,22 @@ function computeStats(hullId,outfits){
   return s;
 }
 function slotsUsed(outfits){let g=0,m=0;for(const id of outfits){const t=OUT[id].type;if(t==='gun'||t==='rack')g++;else if(t==='mod')m++;}return{g,m};}
-function price(port,gid,day=G.day){const g=GOODS.find(x=>x.id===gid);return Math.max(5,Math.round(g.base*KIND_MOD[port.kind][gid]*port.noise[gid]*(1+.14*Math.sin(day*.37+port.phase[gid]))));}
+function price(port,gid,day=G.day){const g=GOODS.find(x=>x.id===gid);return Math.max(5,Math.round(g.base*KIND_MOD[port.kind][gid]*port.noise[gid]*(1+.14*Math.sin(day*.37+port.phase[gid]))*eventMul(port.sys,gid)*(banned(G.gal.systems[port.sys].faction,gid)?1.6:1)));}
+const netWorth=()=>G.p.credits+tradeIn()+Object.entries(G.p.cargo).reduce((a,[g,n])=>a+n*GOODS.find(x=>x.id===g).base,0);
 
 function newGame(seed){
   const gal=genGalaxy(seed);
   G={gal,seed,day:0,loc:gal.home,port:gal.homePort,p:{hullId:'skiff',outfits:['laser'],ammo:0,credits:9000,fuel:3,hull:70,cargo:{}},
     visited:new Set([gal.home]),charted:new Set(),collected:new Set(),surveyVal:0,missions:[],done:new Set(),rep:Object.fromEntries(gal.factions.map(f=>[f.id,0])),
-    stats:{kills:0,jumps:0,boarded:0},route:[],msgs:[]};
+    stats:{kills:0,jumps:0,boarded:0,jobs:0},route:[],msgs:[],ledger:{},log:[],events:[],news:new Set(),suppress:{}};
+  const s=gal.systems[gal.home];logEv(`Took out a charter at ${s.ports[gal.homePort].name}, ${s.name}.`);
 }
-function serialize(){return{v:1,seed:G.seed,day:G.day,loc:G.loc,port:G.port,p:G.p,visited:[...G.visited],charted:[...G.charted],collected:[...G.collected],surveyVal:G.surveyVal,missions:G.missions,done:[...G.done],rep:G.rep,stats:G.stats,route:G.route};}
+function serialize(){return{v:1,seed:G.seed,day:G.day,loc:G.loc,port:G.port,p:G.p,visited:[...G.visited],charted:[...G.charted],collected:[...G.collected],surveyVal:G.surveyVal,missions:G.missions,done:[...G.done],rep:G.rep,stats:G.stats,route:G.route,
+  ledger:G.ledger,log:G.log,events:G.events,news:[...G.news].filter(id=>G.events.some(e=>e.id===id)),suppress:G.suppress};}
 function restore(d){
   const gal=genGalaxy(d.seed);
-  G={gal,seed:d.seed,day:d.day,loc:d.loc,port:d.port,p:d.p,visited:new Set(d.visited),charted:new Set(d.charted),collected:new Set(d.collected),surveyVal:d.surveyVal,missions:d.missions,done:new Set(d.done),rep:d.rep,stats:d.stats,route:d.route||[],msgs:[]};
+  G={gal,seed:d.seed,day:d.day,loc:d.loc,port:d.port,p:d.p,visited:new Set(d.visited),charted:new Set(d.charted),collected:new Set(d.collected),surveyVal:d.surveyVal,missions:d.missions,done:new Set(d.done),rep:d.rep,stats:d.stats,route:d.route||[],msgs:[],
+    ledger:d.ledger||{},log:d.log||[],events:d.events||[],news:new Set(d.news||[]),suppress:d.suppress||{}};
 }
 function save(){lastSave=JSON.stringify(serialize());try{localStorage.setItem(SAVE_KEY,lastSave);}catch(e){}}
 function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
@@ -366,18 +391,71 @@ const HINTS_KEY='lanternreach-hints';
 let hints=true;try{hints=localStorage.getItem(HINTS_KEY)!=='off';}catch(e){}
 const tip=t=>hints?' '+t:'';
 function msg(text,tone){if(!G)return;G.msgs.push({text,tone,t:performance.now()});if(G.msgs.length>6)G.msgs.shift();}
+function logEv(text){G.log.push({day:G.day,text});if(G.log.length>200)G.log.shift();}
+
+// ---------- world: events, news, pirate pressure, contraband ----------
+// Events change prices, close jump lanes or start wars. Their effects are real everywhere, but the
+// player only knows about the ones heard as news at a port within four jumps.
+const live=e=>e.start<=G.day&&G.day<=e.end;
+const blockOf=(a,b)=>G.events.find(e=>e.kind==='blockade'&&live(e)&&(e.sys===a&&e.b===b||e.sys===b&&e.b===a));
+function inWar(e,s){const o=s.faction===e.fa?e.fb:s.faction===e.fb?e.fa:null;return o!=null&&s.links.some(n=>G.gal.systems[n].faction===o);}
+const warZone=s=>G.events.some(e=>e.kind==='war'&&live(e)&&inWar(e,s));
+const suppressed=s=>{const sp=G.suppress[s.id];return sp&&sp.until>=G.day?sp.v:0;};
+const dangerOf=s=>clamp(s.danger-suppressed(s)+(warZone(s)?.3:0),0,1);
+function eventMul(sysId,gid){let m=1;for(const e of G.events)if(e.kind==='market'&&e.sys===sysId&&e.good===gid&&live(e))m*=e.mul;return m;}
+const banned=(f,gid)=>f>=0&&G.gal.factions[f].bans.includes(gid);
+const eventSystems=e=>e.kind==='war'?G.gal.systems.filter(s=>inWar(e,s)).map(s=>s.id):e.kind==='blockade'?[e.sys,e.b]:[e.sys];
+function rollEvents(arriving){
+  const r=rngFor(G.seed,'events',G.day),sys=G.gal.systems;
+  G.events=G.events.filter(e=>e.end>=G.day);
+  if(G.events.length<4&&r()<.4){
+    const t=r();let e=null;
+    if(t<.5){const s=pick(r,sys.filter(s=>s.ports.length)),g=pick(r,LEGAL),up=r()<.6;
+      e={kind:'market',sys:s.id,good:g.id,mul:up?1.7+r()*.4:.5+r()*.12,end:G.day+rint(r,5,9),title:`${up?SHORT[g.id]:GLUT[g.id]} in ${s.name}`,
+        desc:`${g.name} ${up?'prices have soared':'is selling for a song'} at ${s.name}'s ports.`};}
+    else if(t<.78){const s=pick(r,sys),b=pick(r,s.links),navy=s.faction>=0&&r()<.5;
+      e={kind:'blockade',sys:s.id,b,end:G.day+rint(r,3,6),title:`Blockade on the ${s.name}–${sys[b].name} lane`,
+        desc:`${navy?G.gal.factions[s.faction].name+' warships':'Pirate raiders'} are turning back every ship on that jump.`};}
+    else if(!G.events.some(e=>e.kind==='war')){const pairs=[];
+      for(const s of sys)for(const n of s.links){const a=s.faction,b=sys[n].faction;if(a>=0&&b>=0&&a<b&&!pairs.some(p=>p[0]===a&&p[1]===b))pairs.push([a,b]);}
+      if(pairs.length){const[fa,fb]=pick(r,pairs),F=G.gal.factions;
+        e={kind:'war',fa,fb,end:G.day+rint(r,8,14),title:`War between the ${F[fa].name} and the ${F[fb].name}`,
+          desc:'Their border systems are crawling with raiders and privateers. Work out there pays half again.'};}}
+    if(e){e.id=`e${G.day}`;e.start=G.day;G.events.push(e);}
+  }
+  for(const m of G.missions)if(m.type==='bounty'&&m.dest!==arriving&&r()<.2){const n=allNbr(m.dest);if(n.length)moveBounty(m,pick(r,n),'Bounty intel');}
+}
+function learnNews(){
+  const{dist}=bfs(G.loc,id=>G.gal.systems[id].links),near=id=>(dist.get(id)??99)<=4,f=curSys().faction;
+  for(const e of G.events)if(live(e)&&!G.news.has(e.id)&&(e.kind==='war'&&(e.fa===f||e.fb===f)||eventSystems(e).some(near))){
+    G.news.add(e.id);msg(`News: ${e.title}.`);logEv(`Heard news: ${e.title}.`);}
+}
+const contraHeld=f=>Object.keys(G.p.cargo).filter(g=>banned(f,g));
+function inspect(f,who){
+  const bad=contraHeld(f);if(!bad.length)return;
+  const F=G.gal.factions[f],lost=bad.map(g=>`${G.p.cargo[g]}t ${GOODS.find(x=>x.id===g).name}`).join(', '),was=isWanted(f);
+  for(const g of bad)delete G.p.cargo[g];G.rep[f]-=6;
+  msg(`${who} found contraband: ${lost} confiscated.`,'bad');logEv(`Caught smuggling by the ${F.name}: lost ${lost}.`);
+  if(!was&&isWanted(f))msg(`You are now wanted by the ${F.name}.`,'bad');
+}
+
+// ---------- price ledger ----------
+// Prices you have seen with your own eyes, by port and day. Stale entries stay; that is the point.
+function recordPrices(sys,port){G.ledger[`${sys.id}.${port.i}`]={day:G.day,p:Object.fromEntries(GOODS.map(g=>[g.id,price(port,g.id)]))};}
+function bestSeen(gid,skip){let b=null;for(const k in G.ledger){if(k===skip)continue;const e=G.ledger[k],v=e.p[gid];if(v!=null&&(!b||v>b.v)){const[si,pi]=k.split('.').map(Number);b={v,day:e.day,sys:si,port:pi};}}return b;}
 
 // ---------- graph helpers ----------
-const allNbr=id=>G.gal.systems[id].links;
+const allNbr=id=>G.gal.systems[id].links.filter(n=>!blockOf(id,n));
 function bfs(from,nbr){const dist=new Map([[from,0]]),prev=new Map(),q=[from];while(q.length){const c=q.shift();for(const n of nbr(c))if(!dist.has(n)){dist.set(n,dist.get(c)+1);prev.set(n,c);q.push(n);}}return{dist,prev};}
 function pathTo(prev,from,to){const p=[];let c=to;while(c!==undefined&&c!==from){p.unshift(c);c=prev.get(c);}return c===from?p:null;}
 function knowledge(){
   const base=new Set([...G.visited,...G.charted]),ring=new Set(base);
-  for(const id of base)for(const n of allNbr(id))ring.add(n);
+  for(const id of base)for(const n of G.gal.systems[id].links)ring.add(n);
   const scan=stats().scan>0;let known=ring;
-  if(scan){known=new Set(ring);for(const id of ring)for(const n of allNbr(id))known.add(n);}
+  if(scan){known=new Set(ring);for(const id of ring)for(const n of G.gal.systems[id].links)known.add(n);}
   const edgeKnown=(a,b)=>base.has(a)||base.has(b)||(scan&&(ring.has(a)||ring.has(b)));
-  return{base,ring,known,scan,edgeKnown,nbr:id=>allNbr(id).filter(n=>known.has(n)&&edgeKnown(id,n))};
+  const heardBlock=(a,b)=>{const e=blockOf(a,b);return e&&G.news.has(e.id);};
+  return{base,ring,known,scan,edgeKnown,heardBlock,nbr:id=>G.gal.systems[id].links.filter(n=>known.has(n)&&edgeKnown(id,n)&&!heardBlock(id,n))};
 }
 
 // ---------- missions ----------
@@ -392,7 +470,7 @@ function availableMissions(sys,port){
     let m=null;
     if(t<.42){
       const c=within(1,5,s=>s.ports.length);if(!c.length)continue;
-      const dest=pick(r,c),ds=G.gal.systems[dest],dp=pick(r,ds.ports),d=dist.get(dest),g=pick(r,GOODS),tons=rint(r,3,10+d*3);
+      const dest=pick(r,c),ds=G.gal.systems[dest],dp=pick(r,ds.ports),d=dist.get(dest),g=pick(r,LEGAL),tons=rint(r,3,10+d*3);
       m={type:'cargo',dest,destPort:dp.i,good:g.name,tons,reward:Math.round((600+d*tons*75)*(1+ds.danger*.5)/10)*10,deadline:G.day+d*2+rint(r,1,3),
         title:`Deliver ${tons}t of ${g.name}`,desc:`To ${dp.name} in the ${ds.name} system, ${d} jump${d>1?'s':''} away.`};
     }else if(t<.62){
@@ -404,7 +482,7 @@ function availableMissions(sys,port){
       const c=within(1,3,s=>s.danger>.35);if(!c.length)continue;
       const dest=pick(r,c),ds=G.gal.systems[dest],d=dist.get(dest),who=`${pick(r,['Red','Hollow','Lame','Quiet','Black','Grinning'])} ${genName(r)}`;
       m={type:'bounty',dest,target:who,reward:Math.round((3000+ds.danger*9000+d*800)/100)*100,deadline:G.day+d*3+5,
-        title:`Bounty: ${who}`,desc:`A pirate captain operating in ${ds.name}. Destroy their ship.`};
+        title:`Bounty: ${who}`};m.desc=bountyDesc(m);
     }else{
       const c=within(3,7,s=>!G.visited.has(s.id));if(!c.length)continue;
       const dest=pick(r,c),ds=G.gal.systems[dest],d=dist.get(dest);
@@ -412,27 +490,58 @@ function availableMissions(sys,port){
         title:`Survey ${ds.name}`,desc:`Uncharted system ${d} jumps out. Paid on arrival.`};
     }
     m.id=id;m.issuer=issuer;
+    if(warZone(G.gal.systems[m.dest])){m.reward=Math.round(m.reward*1.5/10)*10;m.desc+=' War-zone rates.';}
     if(!G.done.has(id)&&!G.missions.some(x=>x.id===id))out.push(m);
   }
+  if(sys.faction>=0&&(G.rep[sys.faction]||0)>=CONTRACT_REP){const c=makeContract(sys,port,sys.faction);if(c&&!G.done.has(c.id)&&!G.missions.some(x=>x.id===c.id))out.push(c);}
   return out;
+}
+const bountyDesc=m=>`A pirate captain operating in ${G.gal.systems[m.dest].name}. Destroy their ship.`;
+function chartTo(dest){const{prev}=bfs(G.loc,allNbr);for(const id of pathTo(prev,G.loc,dest)||[])G.charted.add(id);}
+function moveBounty(m,to,why){m.dest=to;m.desc=bountyDesc(m);chartTo(to);msg(`${why}: ${m.target} has moved to ${G.gal.systems[to].name}.`,'bad');logEv(`${why}: ${m.target} moved to ${G.gal.systems[to].name}.`);}
+
+// Contracts: multi-stop work a faction offers once you are Respected. Dispatches need a landing at
+// each port in order; a patrol sweep only needs you to arrive in each system.
+const CONTRACT_REP=10;
+function makeContract(sys,port,f){
+  const r=rngFor(G.seed,'contract',sys.id,port.i,G.day),F=G.gal.factions[f],sweep=r()<.45,n=sweep?3:rint(r,2,3),stops=[];
+  let at=sys.id,jumps=0;
+  for(let i=0;i<n;i++){
+    const{dist}=bfs(at,allNbr),used=new Set([sys.id,...stops.map(x=>x.dest)]);
+    const c=[...dist].filter(([id,d])=>d>=1&&d<=3&&!used.has(id)&&(sweep?G.gal.systems[id].danger>.3:G.gal.systems[id].ports.length)).map(([id])=>id);
+    if(!c.length)return null;
+    const dest=pick(r,c);jumps+=dist.get(dest);at=dest;stops.push({dest,destPort:sweep?null:pick(r,G.gal.systems[dest].ports).i});
+  }
+  const names=stops.map(x=>G.gal.systems[x.dest].name).join(', ');
+  const m={type:'contract',id:`${sys.id}.${port.i}.${G.day}.c`,issuer:f,stops,total:n,dest:stops[0].dest,destPort:stops[0].destPort,tons:sweep?0:1,
+    reward:Math.round((3500+jumps*1400)*(sweep?1.3:1)/100)*100,deadline:G.day+jumps*2+3,
+    title:sweep?`${F.name.split(' ').pop()} patrol sweep`:`Sealed dispatches for the ${F.name}`,
+    brief:sweep?`Show the flag in ${names}, in that order. Arriving in each system counts.`:`Hand-deliver dispatches to ${names}, in that order. Takes 1t.`};
+  m.desc=contractDesc(m);return m;
+}
+function contractDesc(m){const s=G.gal.systems[m.dest],p=m.destPort!=null?s.ports[m.destPort].name+', ':'';return `${m.brief} Stop ${m.total-m.stops.length+1} of ${m.total}: ${p}${s.name}.`;}
+function stepContract(m){
+  m.stops.shift();
+  if(!m.stops.length){payMission(m,'Contract complete');if(m.issuer>=0)G.rep[m.issuer]=Math.min(60,G.rep[m.issuer]+3);return;}
+  m.dest=m.stops[0].dest;m.destPort=m.stops[0].destPort;m.desc=contractDesc(m);chartTo(m.dest);
+  msg(`Contract stage done. Next stop: ${G.gal.systems[m.dest].name}.`,'good');logEv(`${m.title}: stage done, next ${G.gal.systems[m.dest].name}.`);
 }
 function acceptMission(m){
   if(m.tons&&cargoUsed()+m.tons>stats().cargo){msg('Not enough hold space for that job.','bad');return;}
   G.missions.push(m);G.done.add(m.id);
-  const {prev}=bfs(G.loc,allNbr);
-  for(const id of pathTo(prev,G.loc,m.dest)||[])G.charted.add(id);
+  chartTo(m.dest);
   msg(`Job accepted: ${m.title}. Route charted.`);
 }
 function payMission(m,why){
   G.p.credits+=m.reward;G.missions=G.missions.filter(x=>x!==m);
   if(m.issuer>=0)G.rep[m.issuer]=Math.min(60,(G.rep[m.issuer]||0)+2);
-  msg(`${why||'Job complete'}: +${fmt(m.reward)} cr`,'good');
+  msg(`${why||'Job complete'}: +${fmt(m.reward)} cr`,'good');G.stats.jobs=(G.stats.jobs||0)+1;logEv(`${why||'Job complete'}: ${m.title}, +${fmt(m.reward)} cr.`);
 }
 function checkDeadlines(){
   for(const m of [...G.missions])if(G.day>m.deadline){
     G.missions=G.missions.filter(x=>x!==m);
     if(m.issuer>=0)G.rep[m.issuer]=(G.rep[m.issuer]||0)-3;
-    msg(`Job failed, deadline passed: ${m.title}`,'bad');
+    msg(`Job failed, deadline passed: ${m.title}`,'bad');logEv(`Failed: ${m.title}.`);
   }
 }
 
@@ -492,7 +601,7 @@ function paintBody(p,key){
 }
 function enterSystem(sysId,from,atPort){
   G.loc=sysId;const sys=curSys();
-  if(!G.visited.has(sysId)){G.visited.add(sysId);G.surveyVal+=Math.round(250+sys.ports.length*60+sys.danger*350);msg(`New system charted: ${sys.name}. Survey data logged.`,'good');}
+  if(!G.visited.has(sysId)){G.visited.add(sysId);G.surveyVal+=Math.round(250+sys.ports.length*60+sys.danger*350);msg(`New system charted: ${sys.name}. Survey data logged.`,'good');logEv(`Charted ${sys.name}.`);}
   const st=stats();
   const me=makeShip(G.p.hullId,G.p.outfits,{player:true,name:'You'});
   me.hull=Math.min(G.p.hull,st.hull);
@@ -502,23 +611,24 @@ function enterSystem(sysId,from,atPort){
   for(const p of sys.ports)if(!p.img)p.img=paintBody(p,`${G.seed}|body|${sys.id}|${p.i}`);
   S={sys,me,ships:[],shots:[],parts:[],t:0,spawnT:4,target:null,nav:null,jump:null,deadT:0,shake:0,
     starImg:glowSprite(sys.star.color,sys.star.r),nebImg:sys.nebula?nebulaSprite(sys.nebula.hue):null};
-  const n=Math.round(1+sys.traffic*3+sys.danger*2);
+  const n=Math.round(1+sys.traffic*3+dangerOf(sys)*2);
   for(let i=0;i<n;i++)spawnNPC(null,{initial:true});
   for(const m of G.missions)if(m.type==='bounty'&&m.dest===sysId)spawnNPC('pirate',{bounty:m});
   for(const m of [...G.missions])if(m.type==='survey'&&m.dest===sysId)payMission(m,'Survey filed');
+  for(const m of [...G.missions])if(m.type==='contract'&&m.destPort==null&&m.dest===sysId)stepContract(m);
   if(from!=null)burst(me.x,me.y,'#bfe6ff',26,260);
   mode='space';
 }
 function spawnNPC(kind,o={}){
   const sys=S.sys,law=sys.faction>=0?G.gal.factions[sys.faction].law:.1,R=Math.random;
-  if(!kind){const w={trader:.5*(sys.traffic+.2),patrol:sys.faction>=0?.32*law:0,pirate:.55*sys.danger};const tot=w.trader+w.patrol+w.pirate;let x=R()*tot;kind=x<w.trader?'trader':x<w.trader+w.patrol?'patrol':'pirate';}
+  if(!kind){const w={trader:.5*(sys.traffic+.2),patrol:sys.faction>=0?.32*law:0,pirate:.55*dangerOf(sys)};const tot=w.trader+w.patrol+w.pirate;let x=R()*tot;kind=x<w.trader?'trader':x<w.trader+w.patrol?'patrol':'pirate';}
   let hullId,outfits,name,color;
   if(kind==='trader'){hullId=pick(R,['skiff','courier','hauler','hauler','hauler']);outfits=['laser'];name=`Merchant ${HULL[hullId].name}`;color='#a9b8cf';}
   else if(kind==='patrol'){hullId=R()<.25?'warden':'kestrel';outfits=hullId==='warden'?['laser','laser','ion','rail','armor','shield']:['laser','laser','ion'];name=`${G.gal.factions[sys.faction].name.split(' ').pop()} Patrol`;color=G.gal.factions[sys.faction].color;}
-  else{const tier=sys.danger+R()*.45;hullId=tier>1.05?'warden':tier>.75?'kestrel':tier>.45?'courier':'skiff';
+  else{const tier=dangerOf(sys)+R()*.45;hullId=tier>1.05?'warden':tier>.75?'kestrel':tier>.45?'courier':'skiff';
     outfits={skiff:['laser'],courier:['ion'],kestrel:['laser','laser','ion'],warden:['laser','rail','ion','laser','rack']}[hullId];name=`Pirate ${HULL[hullId].name}`;color='#ff6b5a';}
   if(o.bounty){hullId=sys.danger>.6?'warden':'kestrel';outfits=hullId==='warden'?['rail','laser','laser','ion','rack','armor','shield']:['laser','laser','rail','armor','shield'];name=o.bounty.target;color='#ff3d6e';}
-  const s=makeShip(hullId,outfits,{name,color,ai:{kind,faction:sys.faction,tgt:null,retarget:0,goal:null},bountyId:o.bounty?.id});
+  const s=makeShip(hullId,outfits,{name,color,ai:{kind,faction:sys.faction,tgt:null,retarget:0,goal:null},bountyId:o.bounty?.id,canFlee:o.bounty?(o.bounty.fled||0)<2:true});
   const fromPort=sys.ports.length&&kind!=='pirate'&&R()<.45&&!o.bounty;
   if(o.initial&&!o.bounty){const a=R()*TAU,d=300+R()*1100;s.x=Math.cos(a)*d;s.y=Math.sin(a)*d;s.a=R()*TAU;}
   else if(fromPort){const p=pick(R,sys.ports);s.x=p.x;s.y=p.y;s.a=R()*TAU;s.vx=Math.cos(s.a)*50;s.vy=Math.sin(s.a)*50;}
@@ -555,6 +665,7 @@ function damage(s,o,shooter){
   if(s.shield>=d)s.shield-=d;else{const frac=(d-s.shield)/d;s.shield=0;s.hull-=o.dmg*(o.hullMul||1)*frac;}
   s.hitT=.12;s.lastHit=S.t;
   if(shooter&&shooter.player&&!s.player)provoke(s);
+  if(s.bountyId&&shooter&&shooter.player&&!s.called){s.called=true;msg(`${s.name} calls in backup!`,'bad');for(let i=dangerOf(S.sys)>.6?2:1;i>0;i--){const w=spawnNPC('pirate');w.ai.tgt=S.me;}}
   if(!s.player&&shooter&&!shooter.player&&s.ai.kind==='trader')s.fleeFrom=shooter;
   if(s.hull<=0)destroy(s,shooter);
   else if(!s.player&&!s.disabled&&s.hull<s.st.hull*.22){s.disabled=true;s.shield=0;if(Math.hypot(s.x-S.me.x,s.y-S.me.y)<1600)msg(`${s.name} disabled.`);}
@@ -566,11 +677,16 @@ function destroy(s,shooter){
   if(s.bountyId){const m=G.missions.find(x=>x.id===s.bountyId);if(m)payMission(m,'Bounty claimed');}
   if(shooter&&shooter.player){
     G.stats.kills++;const f=S.sys.faction;
-    if(s.ai.kind==='pirate'){const b=Math.round((300+HULL[s.hullId].price*.05)/10)*10;G.p.credits+=b;if(f>=0)G.rep[f]=Math.min(60,(G.rep[f]||0)+2);msg(`Pirate destroyed. Bounty paid: ${fmt(b)} cr`,'good');}
+    if(s.ai.kind==='pirate'){const sid=S.sys.id;G.suppress[sid]={v:Math.min(.45,suppressed(S.sys)+.08),until:G.day+6};
+      const b=Math.round((300+HULL[s.hullId].price*.05)/10)*10;G.p.credits+=b;if(f>=0)G.rep[f]=Math.min(60,(G.rep[f]||0)+2);msg(`Pirate destroyed. Bounty paid: ${fmt(b)} cr`,'good');}
     else if(f>=0){const was=isWanted(f);G.rep[f]-=s.ai.kind==='patrol'?20:10;msg(`${s.name} destroyed. The ${G.gal.factions[f].name} will remember that.`,'bad');if(!was&&isWanted(f))msg(`You are now wanted by the ${G.gal.factions[f].name}.`,'bad');}
   }
 }
-function jumpOut(s){s.dead=true;burst(s.x,s.y,'#bfe6ff',14,220);}
+function jumpOut(s){
+  s.dead=true;burst(s.x,s.y,'#bfe6ff',14,220);
+  const m=s.bountyId&&G.missions.find(x=>x.id===s.bountyId);
+  if(m){m.fled=(m.fled||0)+1;const n=allNbr(S.sys.id);if(n.length)moveBounty(m,pick(Math.random,n),'Escaped');}
+}
 function newGoal(s){
   const R=Math.random,ports=S.sys.ports,k=s.ai.kind;
   if(k==='trader'&&ports.length&&R()<.65){const p=pick(R,ports);return{type:'land',x:p.x,y:p.y,r:p.size};}
@@ -590,7 +706,7 @@ function aiUpdate(s,dt){
   if(ai.retarget<=0||!ai.tgt||ai.tgt.dead||(ai.tgt.player&&(S.jump||!hostileToPlayer(s)))||(!ai.tgt.player&&ai.tgt.disabled&&ai.kind==='pirate')){ai.tgt=chooseTarget(s);ai.retarget=1+Math.random();}
   const t=ai.tgt;
   if(t&&!t.dead){
-    if(ai.kind==='pirate'&&s.hull<s.st.hull*.35&&!s.bountyId){steer(s,Math.atan2(s.y-t.y,s.x-t.x),dt);thrust(s,dt);if(Math.hypot(s.x,s.y)>1500)jumpOut(s);return;}
+    if(ai.kind==='pirate'&&s.hull<s.st.hull*(s.bountyId?.3:.35)&&s.canFlee){if(s.bountyId&&!s.fleeing){s.fleeing=true;msg(`${s.name} is running for the jump ring!`,'bad');}steer(s,Math.atan2(s.y-t.y,s.x-t.x),dt);thrust(s,dt);if(Math.hypot(s.x,s.y)>1500)jumpOut(s);return;}
     const dx=t.x-s.x,dy=t.y-s.y,d=Math.hypot(dx,dy),ps=s.st.guns[0]?.speed||700,lt=d/ps;
     const want=Math.atan2(t.y+(t.vy-s.vy)*lt-s.y,t.x+(t.vx-s.vx)*lt-s.x);
     const diff=steer(s,want,dt);
@@ -638,6 +754,9 @@ function update(dt){
     physics(me,dt);G.p.hull=me.hull;
   }else if(S.deadT>0){S.deadT-=dt;if(S.deadT<=0)showDeath();}
   for(const s of S.ships){s.thrusting=false;aiUpdate(s,dt);physics(s,dt);}
+  // the first friendly patrol to come close scans your hold
+  if(!S.scanned&&!me.dead&&S.sys.faction>=0)for(const s of S.ships)if(s.ai.kind==='patrol'&&!s.hostile&&!s.disabled&&Math.hypot(s.x-me.x,s.y-me.y)<320){
+    S.scanned=true;if(contraHeld(S.sys.faction).length&&Math.random()<G.gal.factions[S.sys.faction].law*.6)inspect(S.sys.faction,`${s.name} scan`);break;}
   S.ships=S.ships.filter(s=>!s.dead);
   if(S.target&&S.target.dead)S.target=null;
   // shots
@@ -686,6 +805,9 @@ function landAt(p){
   G.port=p.i;mode='landed';
   const sys=curSys();
   for(const m of [...G.missions])if((m.type==='cargo'||m.type==='passenger')&&m.dest===sys.id&&m.destPort===p.i)payMission(m,m.type==='cargo'?'Cargo delivered':'Passengers delivered');
+  for(const m of [...G.missions])if(m.type==='contract'&&m.destPort!=null&&m.dest===sys.id&&m.destPort===p.i)stepContract(m);
+  if(sys.faction>=0&&!isWanted(sys.faction)&&Math.random()<G.gal.factions[sys.faction].law*.4)inspect(sys.faction,'Customs');
+  learnNews();
   if(!isWanted(sys.faction))save();
   landTab='port';openLand();
 }
@@ -698,6 +820,8 @@ function tryJump(){
   if(!G.route.length){msg('No route plotted.'+tip('Open the map (M) and choose a destination.'));return;}
   const next=G.route[0];
   if(!S.sys.links.includes(next)){G.route=[];msg('Route no longer valid.'+tip('Plot it again on the map.'),'bad');return;}
+  const bl=blockOf(G.loc,next);
+  if(bl){G.news.add(bl.id);G.route=[];msg(`The lane to ${G.gal.systems[next].name} is blockaded.`+tip('Plot a way around it on the map.'),'bad');return;}
   if(G.p.fuel<1){
     if(G.p.credits>=1500){G.p.credits-=1500;G.p.fuel=1;msg('A fuel tug sells you one jump of fuel for 1,500 cr.');}
     else{G.p.fuel=1;msg('A passing hauler takes pity and transfers one jump of fuel.');}
@@ -709,7 +833,7 @@ function tryJump(){
 function doJump(){
   const from=G.loc,to=S.jump.to;
   G.p.fuel--;G.day++;G.route.shift();G.stats.jumps++;
-  enterSystem(to,from);checkDeadlines();save();
+  rollEvents(to);enterSystem(to,from);checkDeadlines();save();
   if(!G.route.length)msg(`Arrived at ${curSys().name}. Route complete.`);
 }
 function tryBoard(){
@@ -750,7 +874,7 @@ function drawShip(s){
   if(s.thrusting){cx.fillStyle=s.player?'rgba(255,190,90,.9)':'rgba(140,210,255,.8)';cx.beginPath();cx.moveTo(-sz*.7,-sz*.22);cx.lineTo(-sz*(1.1+Math.random()*.4),0);cx.lineTo(-sz*.7,sz*.22);cx.fill();}
   cx.beginPath();pts.forEach(([x,y],i)=>i?cx.lineTo(x*sz,y*sz):cx.moveTo(x*sz,y*sz));cx.closePath();
   cx.fillStyle=s.hitT>0?'#3a2e2e':'#151d2e';cx.fill();
-  cx.lineWidth=1.6/Z;cx.strokeStyle=s.player?'#ffb547':s.disabled?'#5c6578':s.color;cx.stroke();
+  cx.lineWidth=1.6/Z;cx.strokeStyle=s.player?G.p.paint||PAINTS[0]:s.disabled?'#5c6578':s.color;cx.stroke();
   cx.fillStyle=s.player?'#ffe2a8':s.disabled?'#3b4252':s.color;cx.beginPath();cx.arc(sz*.25,0,sz*.13,0,TAU);cx.fill();
   cx.restore();
   if(s.shield>0&&S.t-s.lastHit<.25){cx.strokeStyle='rgba(98,213,255,.55)';cx.lineWidth=2/Z;cx.beginPath();cx.arc(s.x,s.y,s.size*1.45,0,TAU);cx.stroke();}
@@ -914,7 +1038,8 @@ $('quit').onclick=()=>{$('pause').hidden=true;showTitle();};
 // ---------- port screen ----------
 let landTab='port';
 const landEl=$('land');
-function openLand(){landEl.hidden=false;renderLand();}
+function openLand(){const sys=curSys();if(!isWanted(sys.faction))recordPrices(sys,sys.ports[G.port]);landEl.hidden=false;renderLand();}
+const logHtml=n=>G.log.slice(-n).reverse().map(l=>`<div><span class="mono">D${l.day}</span><span>${esc(l.text)}</span></div>`).join('');
 function renderLand(){
   const body=landEl.querySelector('.dock-body'),scroll=body?body.scrollTop:0;
   const sys=curSys(),port=sys.ports[G.port],st=stats(),f=sys.faction;
@@ -931,6 +1056,7 @@ function renderLand(){
   let html='';
   if(landTab==='port'){
     const fuelCost=(st.fuel-G.p.fuel)*120,dmg=Math.max(0,st.hull-G.p.hull),repCost=Math.round(dmg*9);
+    const news=G.events.filter(e=>live(e)&&G.news.has(e.id));
     const repTxt=f>=0?`${G.rep[f]>=10?'<span class="c-good">Respected</span>':G.rep[f]<0?'<span class="c-bad">Suspect</span>':'Clean'} (${G.rep[f]})`:'No authority here';
     html=`<p class="desc">${esc(port.desc)}</p>
     ${hints&&G.day===0&&G.stats.jumps===0?`<div class="card" style="border-color:var(--amber)"><h3 class="c-amber">First flight</h3><p class="desc muted">Check the Trade tab for cheap goods, or take a delivery from Jobs. Open the map (M) once in space to plot a route, fly outside the dashed ring, and press J. Exploring new systems earns survey data you can sell at any port.</p></div>`:''}
@@ -941,16 +1067,23 @@ function renderLand(){
         <div class="row"><span>Sell survey data</span><button class="btn sm" data-act="survey" ${G.surveyVal?'':'disabled'}>${G.surveyVal?fmt(G.surveyVal)+' cr':'None'}</button></div>
       </div>
       <div class="card"><h3>Pilot record</h3><dl class="kv">
-        <dt>Ship</dt><dd>${esc(HULL[G.p.hullId].name)}</dd><dt>Combat rating</dt><dd>${rank()} (${G.stats.kills})</dd>
+        <dt>Ship</dt><dd>${G.p.name?esc(G.p.name)+' · ':''}${esc(HULL[G.p.hullId].name)}</dd><dt>Net worth</dt><dd class="c-amber">${fmt(netWorth())} cr</dd>
+        <dt>Combat rating</dt><dd>${rank()} (${G.stats.kills})</dd><dt>Jobs done</dt><dd>${G.stats.jobs||0}</dd>
         <dt>Systems charted</dt><dd>${G.visited.size} / ${G.gal.systems.length}</dd><dt>Standing</dt><dd>${repTxt}</dd><dt>Authority</dt><dd style="color:${facColor(sys)}">${esc(facName(sys))}</dd></dl></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>Station news</h3>${news.length?news.map(e=>`<div><strong>${esc(e.title)}</strong><p class="desc muted" style="font-size:14px;margin:2px 0 8px">${esc(e.desc)} Expected to last until about day ${e.end}.</p></div>`).join(''):'<p class="muted">Nothing worth repeating.</p>'}</div>
+      <div class="card"><h3>Captain's log</h3><div class="log">${logHtml(7)}</div></div>
     </div>`;
   }else if(landTab==='trade'){
     const free=st.cargo-cargoUsed();
-    html=`<div class="row"><span class="muted">Prices shift daily.${hints?' Labels compare against the galactic average.':''}</span><span class="mono">Free hold: ${free}t</span></div>
-    <div class="scroll-x"><table><thead><tr><th>Commodity</th><th class="r">Price</th><th></th><th class="r">In hold</th><th class="r">Trade</th></tr></thead><tbody>${GOODS.map(g=>{
-      const p=price(port,g.id),rel=p/g.base,have=G.p.cargo[g.id]||0,canBuy=Math.min(free,Math.floor(G.p.credits/p));
-      const tag=!hints?'':rel<.8?'<span class="chip c-good">Cheap</span>':rel>1.2?'<span class="chip c-amber">High</span>':'';
-      return `<tr><td>${g.name}</td><td class="r num">${fmt(p)}</td><td>${tag}</td><td class="r num">${have||'—'}</td><td><div class="acts">
+    const here=`${sys.id}.${port.i}`,illegal=GOODS.some(g=>banned(f,g.id));
+    html=`<div class="row"><span class="muted">Prices shift daily.${hints?' Labels compare against the galactic average.':''}${illegal?' Banned goods sell on the black market here, and customs search holds.':''}</span><span class="mono">Free hold: ${free}t</span></div>
+    <div class="scroll-x"><table><thead><tr><th>Commodity</th><th class="r">Price</th><th></th><th class="r">Best sale seen</th><th class="r">In hold</th><th class="r">Trade</th></tr></thead><tbody>${GOODS.map(g=>{
+      const p=price(port,g.id),rel=p/g.base,have=G.p.cargo[g.id]||0,ill=banned(f,g.id),canBuy=ill?0:Math.min(free,Math.floor(G.p.credits/p)),b=bestSeen(g.id,here);
+      const tag=(ill?'<span class="chip c-bad">Illegal here</span> ':g.contra?'<span class="chip">Contraband</span> ':'')+(!hints||ill?'':rel<.8?'<span class="chip c-good">Cheap</span>':rel>1.2?'<span class="chip c-amber">High</span>':'');
+      const seen=b?`<span class="num">${fmt(b.v)}</span> <span class="muted">${esc(G.gal.systems[b.sys].name)} · ${G.day-b.day?G.day-b.day+'d ago':'today'}</span>`:'<span class="muted">—</span>';
+      return `<tr><td>${g.name}</td><td class="r num">${fmt(p)}</td><td>${tag}</td><td class="r seen">${seen}</td><td class="r num">${have||'—'}</td><td><div class="acts">
         <button class="btn sm" data-act="buy" data-g="${g.id}" data-n="1" ${canBuy<1?'disabled':''}>Buy 1</button><button class="btn sm" data-act="buy" data-g="${g.id}" data-n="${canBuy}" ${canBuy<1?'disabled':''}>Max</button>
         <button class="btn sm" data-act="sell" data-g="${g.id}" data-n="1" ${have<1?'disabled':''}>Sell 1</button><button class="btn sm" data-act="sell" data-g="${g.id}" data-n="${have}" ${have<1?'disabled':''}>All</button></div></td></tr>`;}).join('')}</tbody></table></div>`;
   }else if(landTab==='outfit'){
@@ -964,7 +1097,9 @@ function renderLand(){
       return `<tr><td>${o.name}</td><td class="muted" style="min-width:200px">${o.desc}</td><td class="r num">${fmt(o.price)}</td><td class="r num">${n||'—'}</td><td><div class="acts"><button class="btn sm" data-act="obuy" data-o="${o.id}" ${can?'':'disabled'}>Buy</button>${o.type==='ammo'?'':`<button class="btn sm" data-act="osell" data-o="${o.id}" ${canSell?'':'disabled'}>Sell</button>`}</div></td></tr>`;}).join('')}</tbody></table></div>`;
   }else if(landTab==='ship'){
     const trade=tradeIn();
-    html=`<p class="desc muted">Your ${esc(HULL[G.p.hullId].name)} and fitted outfits trade in for <span class="mono c-amber">${fmt(trade)} cr</span>. Outfits that fit the new hull move across; the rest are sold.</p>
+    html=`<div class="card"><h3>Your ship</h3><div class="row" style="justify-content:flex-start;flex-wrap:wrap"><label class="eyebrow" for="shipName">Name</label><input id="shipName" class="text-in" maxlength="24" spellcheck="false" autocomplete="off" value="${esc(G.p.name||'')}" placeholder="Unnamed">
+      <span class="eyebrow">Paint</span>${PAINTS.map(c=>`<button class="swatch" type="button" data-act="paint" data-c="${c}" aria-label="Paint ${c}" aria-pressed="${(G.p.paint||PAINTS[0])===c}" style="background:${c}"></button>`).join('')}</div></div>
+    <p class="desc muted">Your ${esc(HULL[G.p.hullId].name)} and fitted outfits trade in for <span class="mono c-amber">${fmt(trade)} cr</span>. Outfits that fit the new hull move across; the rest are sold.</p>
     <div class="grid2">${HULLS.filter(h=>h.tech<=port.tech).map(h=>{
       const cost=h.price-trade,mine=h.id===G.p.hullId,ok=!mine&&G.p.credits>=cost&&cargoUsed()<=h.cargo;
       return `<div class="card"><div class="row"><h3>${h.name}</h3>${mine?'<span class="chip c-amber">Current</span>':''}</div><p class="desc muted" style="font-size:14px">${h.desc}</p>
@@ -975,7 +1110,8 @@ function renderLand(){
     const pairs=j=>hints&&j.fits.length?`<span class="chip c-cyan">Pairs with ${j.fits.join(', ')}</span>`:'';
     html=`<div class="jobmap"><canvas id="jobmap" aria-label="Map of job destinations"></canvas><div class="jobmap-key"><span class="c-amber">■ Your jobs (A, B…)</span><span class="c-cyan">● Job board (1, 2…)</span>${hints?'<span>Hover or tap a job to trace its route</span>':''}</div></div>
       <h3>Active jobs</h3>${G.missions.length?G.missions.map(m=>`<div class="job" data-m="${m.id}"><strong><span class="jtag c-amber">${J(m.id).tag}</span>${esc(m.title)}</strong><span class="pay">${fmt(m.reward)} cr</span><p>${esc(m.desc)} Due day ${m.deadline}.</p><button class="btn sm" data-act="abandon" data-m="${m.id}">Abandon</button></div>`).join(''):'<p class="muted">None.</p>'}
-      <h3>Job board</h3>${av.length?av.map(m=>`<div class="job" data-m="${m.id}"><strong><span class="jtag c-cyan">${J(m.id).tag}</span>${esc(m.title)}</strong><span class="pay">${fmt(m.reward)} cr</span><p>${esc(m.desc)} Due day ${m.deadline}.${m.tons?` Needs ${m.tons}t.`:''} ${pairs(J(m.id))}</p><button class="btn sm" data-act="accept" data-m="${m.id}" ${m.tons&&cargoUsed()+m.tons>st.cargo?'disabled':''}>Accept</button></div>`).join(''):'<p class="muted">No work posted today. Check back tomorrow.</p>'}`;
+      <h3>Job board</h3>${f>=0&&(G.rep[f]||0)<CONTRACT_REP?`<p class="muted">The ${esc(G.gal.factions[f].name)} offers contract work to pilots it trusts: standing ${CONTRACT_REP} or better (yours is ${G.rep[f]||0}).</p>`:''}
+      ${av.length?av.map(m=>`<div class="job" data-m="${m.id}"><strong><span class="jtag c-cyan">${J(m.id).tag}</span>${m.type==='contract'?'<span class="chip c-amber">Contract</span> ':''}${esc(m.title)}</strong><span class="pay">${fmt(m.reward)} cr</span><p>${esc(m.desc)} Due day ${m.deadline}.${m.tons?` Needs ${m.tons}t.`:''} ${pairs(J(m.id))}</p><button class="btn sm" data-act="accept" data-m="${m.id}" ${m.tons&&cargoUsed()+m.tons>st.cargo?'disabled':''}>Accept</button></div>`).join(''):'<p class="muted">No work posted today. Check back tomorrow.</p>'}`;
   }
   landEl.innerHTML=`<div class="dock">${head}<div class="tabs" role="tablist">${tabs.map(([id,l])=>`<button class="tab" role="tab" aria-selected="${landTab===id}" data-act="tab" data-t="${id}">${l}</button>`).join('')}</div>
     <div class="dock-body">${html}</div><div class="dock-foot"><span class="muted" style="font-size:13px">Game saved on landing.</span><button class="btn primary" data-act="takeoff">Take off</button></div></div>`;
@@ -1028,6 +1164,7 @@ function drawJobMap(){
 function setJobHL(e){const j=e.target.closest&&e.target.closest('.job[data-m]'),id=j?j.dataset.m:null;if(id!==jobHL){jobHL=id;drawJobMap();}}
 landEl.addEventListener('pointerover',setJobHL);landEl.addEventListener('focusin',setJobHL);
 landEl.addEventListener('pointerleave',()=>{jobHL=null;drawJobMap();});
+landEl.addEventListener('change',e=>{if(e.target.id!=='shipName')return;const n=e.target.value.trim().slice(0,24);if(n&&n!==G.p.name)logEv(`Renamed the ship ${n}.`);G.p.name=n;});
 function tradeIn(){return Math.round(HULL[G.p.hullId].price*.55+G.p.outfits.reduce((a,id)=>a+OUT[id].price*.5,0));}
 landEl.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
@@ -1049,7 +1186,8 @@ landEl.addEventListener('click',e=>{
       for(const id of G.p.outfits){const t=OUT[id].type;if((t==='gun'||t==='rack')&&g<h.guns){keep.push(id);g++;}else if(t==='mod'&&m<h.mods){keep.push(id);m++;}else G.p.credits-=Math.round(OUT[id].price*.5);}
       if(!keep.some(id=>OUT[id].type==='gun'))keep.unshift('laser');
       G.p.hullId=h.id;G.p.outfits=keep;const ns=stats();G.p.hull=ns.hull;G.p.fuel=ns.fuel;G.p.ammo=Math.min(G.p.ammo,ns.racks*10);
-      msg(`You take delivery of a ${h.name}.`,'good');break;}
+      msg(`You take delivery of a ${h.name}.`,'good');logEv(`Bought a ${h.name}.`);break;}
+    case 'paint':G.p.paint=d.c;break;
     case 'accept':{const m=availableMissions(curSys(),port).find(x=>x.id===d.m);if(m)acceptMission(m);break;}
     case 'abandon':{const m=G.missions.find(x=>x.id===d.m);if(m){G.missions=G.missions.filter(x=>x!==m);if(m.issuer>=0)G.rep[m.issuer]-=2;}break;}
   }
@@ -1074,6 +1212,11 @@ function drawMap(){
   for(const id of K.known)for(const n of sys[id].links)if(n>id&&K.known.has(n)&&K.edgeKnown(id,n)){
     const[a,b]=m2s(sys[id].x,sys[id].y),[c,d]=m2s(sys[n].x,sys[n].y);mx.strokeStyle=G.visited.has(id)&&G.visited.has(n)?'rgba(138,150,174,.45)':'rgba(138,150,174,.2)';mx.beginPath();mx.moveTo(a,b);mx.lineTo(c,d);mx.stroke();}
   if(G.route.length){mx.strokeStyle='#ffb547';mx.lineWidth=2.5;mx.beginPath();let[a,b]=m2s(me.x,me.y);mx.moveTo(a,b);for(const id of G.route){[a,b]=m2s(sys[id].x,sys[id].y);mx.lineTo(a,b);}mx.stroke();mx.lineWidth=1;}
+  const heard=G.events.filter(e=>live(e)&&G.news.has(e.id));
+  for(const e of heard){
+    if(e.kind==='blockade'){const[a,b]=m2s(sys[e.sys].x,sys[e.sys].y),[c,d]=m2s(sys[e.b].x,sys[e.b].y);mx.strokeStyle='#ff6262';mx.lineWidth=2;mx.setLineDash([5,4]);mx.beginPath();mx.moveTo(a,b);mx.lineTo(c,d);mx.stroke();mx.setLineDash([]);mx.lineWidth=1;}
+    else for(const id of eventSystems(e)){if(!K.known.has(id))continue;const[x,y]=m2s(sys[id].x,sys[id].y);mx.strokeStyle=e.kind==='war'?'rgba(255,98,98,.6)':'#62d5ff';mx.setLineDash([3,3]);mx.beginPath();mx.arc(x,y,17,0,TAU);mx.stroke();mx.setLineDash([]);}
+  }
   const targets=new Set(G.missions.map(m=>m.dest));
   mx.font='500 12px "IBM Plex Sans Condensed",sans-serif';mx.textAlign='center';
   for(const id of K.known){
@@ -1089,14 +1232,18 @@ function drawMap(){
 }
 function renderMapInfo(){
   const el=$('mapinfo');
-  if(mapSel==null){el.innerHTML=`${hints?'<div class="eyebrow">Navigation</div><p class="desc muted">Select a system to see what you know about it and plot a course. Filled dots are systems you have visited; hollow ones are known but unexplored. Amber squares mark job destinations.</p>':''}<div class="eyebrow">Legend</div>${G.gal.factions.map(f=>`<div class="row" style="justify-content:flex-start"><span style="width:10px;height:10px;border-radius:50%;background:${f.color};display:inline-block"></span><span>${esc(f.name)}${isWanted(f.id)?' <span class="chip c-bad">Wanted</span>':''}</span></div>`).join('')}<div class="row" style="justify-content:flex-start"><span style="width:10px;height:10px;border-radius:50%;background:#9aa3b5;display:inline-block"></span><span>Unclaimed space</span></div>`;return;}
+  if(mapSel==null){el.innerHTML=`${hints?'<div class="eyebrow">Navigation</div><p class="desc muted">Select a system to see what you know about it and plot a course. Filled dots are systems you have visited; hollow ones are known but unexplored. Amber squares mark job destinations. Dashed rings and red lanes mark news you have heard.</p>':''}<div class="eyebrow">Legend</div>${G.gal.factions.map(f=>`<div class="row" style="justify-content:flex-start"><span style="width:10px;height:10px;border-radius:50%;background:${f.color};display:inline-block"></span><span>${esc(f.name)}${isWanted(f.id)?' <span class="chip c-bad">Wanted</span>':''}${f.bans.length?` <span class="muted">· bans ${f.bans.map(g=>GOODS.find(x=>x.id===g).name).join(', ')}</span>`:''}</span></div>`).join('')}<div class="row" style="justify-content:flex-start"><span style="width:10px;height:10px;border-radius:50%;background:#9aa3b5;display:inline-block"></span><span>Unclaimed space</span></div>`;return;}
   const s=G.gal.systems[mapSel],vis=G.visited.has(s.id),K=mapK,named=vis||K.base.has(s.id);
   const {dist,prev}=bfs(G.loc,K.nbr),path=pathTo(prev,G.loc,s.id),d=dist.get(s.id);
-  const danger=s.danger<.3?'<span class="c-good">Low</span>':s.danger<.6?'<span class="c-amber">Moderate</span>':'<span class="c-bad">High</span>';
+  const dz=dangerOf(s),danger=(dz<.3?'<span class="c-good">Low</span>':dz<.6?'<span class="c-amber">Moderate</span>':'<span class="c-bad">High</span>')+(suppressed(s)?' <span class="muted">· thinned out by you</span>':'');
+  const evs=G.events.filter(e=>live(e)&&G.news.has(e.id)&&eventSystems(e).includes(s.id));
+  const ledger=s.ports.map(p=>{const e=G.ledger[`${s.id}.${p.i}`];return e?`<details><summary>${esc(p.name)} · prices from day ${e.day}</summary><div class="ledger">${GOODS.map(g=>`<span>${g.name}</span><span class="num">${fmt(e.p[g.id])}</span>`).join('')}</div></details>`:'';}).join('');
   const jobs=G.missions.filter(m=>m.dest===s.id);
   el.innerHTML=`<div><div class="eyebrow" style="color:${s.faction>=0&&named?G.gal.factions[s.faction].color:'var(--dim)'}">${named?esc(facName(s)):'Unknown authority'}</div><h3 style="font-size:22px">${named?esc(s.name):'Uncharted system'}</h3></div>
     <dl class="kv"><dt>Status</dt><dd>${s.id===G.loc?'You are here':vis?'Visited':'Unexplored'}</dd>${vis||K.scan?`<dt>Pirate activity</dt><dd>${danger}</dd>`:''}<dt>Jumps</dt><dd>${d??'No known route'}</dd>${d?`<dt>Fuel needed</dt><dd>${d} of ${G.p.fuel}</dd>`:''}</dl>
     ${vis?`<div><div class="eyebrow">Ports</div>${s.ports.length?s.ports.map(p=>`<div>${esc(p.name)} <span class="muted">· ${esc(p.kind)}, tech ${p.tech}${p.shipyard?', shipyard':''}</span></div>`).join(''):'<div class="muted">None. Empty system.</div>'}</div>`:''}
+    ${evs.length?`<div><div class="eyebrow">News</div>${evs.map(e=>`<div class="${e.kind==='market'?'c-cyan':'c-bad'}">${esc(e.title)}</div>`).join('')}</div>`:''}
+    ${ledger?`<div><div class="eyebrow">Your price ledger</div>${ledger}</div>`:''}
     ${jobs.length?`<div><div class="eyebrow">Your jobs here</div>${jobs.map(m=>`<div class="c-amber">${esc(m.title)}</div>`).join('')}</div>`:''}
     ${s.id!==G.loc?`<button class="btn primary" data-mact="route" ${path?'':'disabled'}>${path?'Plot course':'No known route'}</button>`:''}
     ${G.route.length?`<button class="btn" data-mact="clear">Clear route</button>`:''}`;
@@ -1135,11 +1282,16 @@ function startFrom(d){
   else enterSystem(G.loc,null,null);
 }
 $('reroll').onclick=()=>{$('seed').value=randomSeed();};
-$('newGame').onclick=()=>{const seed=($('seed').value.trim()||randomSeed()).slice(0,32);newGame(seed);save();$('title').hidden=true;mode='landed';landTab='port';openLand();};
+function launch(seed){newGame(seed);save();$('title').hidden=true;mode='landed';landTab='port';openLand();}
+$('newGame').onclick=()=>launch(($('seed').value.trim()||randomSeed()).slice(0,32));
+// Everyone gets the same galaxy on the same (UTC) day.
+$('daily').onclick=()=>launch(`daily-${new Date().toISOString().slice(0,10)}`);
 $('contGame').onclick=()=>{const sv=readSave()||(lastSave?JSON.parse(lastSave):null);if(sv)startFrom(sv);};
 function showDeath(){
   mode='dead';
-  $('deadText').textContent=`Lost in ${curSys().name} on day ${G.day}. ${G.stats.kills} kills, ${G.visited.size} systems charted. Your last landing is still on file.`;
+  logEv(`Ship lost in ${curSys().name}.`);
+  $('deadText').textContent=`${G.p.name?G.p.name+' was lost':'Lost'} in ${curSys().name} on day ${G.day}. Net worth ${fmt(netWorth())} cr, ${plural(G.stats.jobs||0,'job')} done, ${plural(G.stats.kills,'kill')}, ${plural(G.visited.size,'system')} charted. Your last landing is still on file.`;
+  $('deadLog').innerHTML=logHtml(8);
   $('dead').hidden=false;$('restore').focus();
 }
 $('restore').onclick=()=>{$('dead').hidden=true;const sv=lastSave?JSON.parse(lastSave):readSave();if(sv)startFrom(sv);else showTitle();};
