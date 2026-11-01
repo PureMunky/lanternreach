@@ -73,6 +73,26 @@ td .acts{display:flex;gap:4px;justify-content:flex-end}
 .ledger{display:grid;grid-template-columns:1fr auto;gap:0 12px;font-size:13px;margin-top:4px}
 details summary{cursor:pointer;font-size:14px}
 .seen{font-size:12px;white-space:nowrap}
+@media (max-height:480px){
+  .dock-head{padding:8px 16px 6px}.dock-head h2{font-size:20px}.dock-head .eyebrow{font-size:10px}
+  .tabs{padding:0 12px}.tab{padding:6px 10px}
+  .dock-body{padding:10px 16px;gap:10px}.dock-foot{padding:6px 16px}
+}
+/* Phone: trade and outfitter rows become small cards so prices and buttons stay on screen. */
+@media (max-width:640px){
+  table.cards thead{display:none}
+  table.cards,table.cards tbody{display:block;min-width:0}
+  table.cards tr{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:10px 0;border-bottom:1px solid rgba(36,49,80,.5)}
+  table.cards td{border:0;padding:0;text-align:left;min-width:0!important}
+  table.cards td[data-l]::before{content:attr(data-l);color:var(--dim);font-size:12px;margin-right:6px}
+  table.cards td:nth-child(1){font-weight:600}
+  table.cards td:nth-child(2){text-align:right}
+  table.cards .acts{justify-content:flex-start;flex-wrap:wrap}
+  table.trade td:nth-child(3){grid-area:2/1}table.trade td:nth-child(5){grid-area:2/2;text-align:right}
+  table.trade td:nth-child(4){grid-area:3/1/4/3;white-space:normal}table.trade td:nth-child(6){grid-area:4/1/5/3}
+  table.outfit td:nth-child(2){grid-area:2/1/3/3;text-align:left}table.outfit td:nth-child(3){grid-area:1/2;text-align:right}
+  table.outfit td:nth-child(4){grid-area:3/1}table.outfit td:nth-child(5){grid-area:3/2}
+}
 .title-dock{width:min(760px,100%)}
 .title-dock .dock-body{gap:18px;padding:26px 24px}
 .lede{font-size:17px;max-width:60ch;margin:0;color:var(--ink)}
@@ -85,7 +105,8 @@ kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line-hi);pad
 .map-main{flex:1;display:flex;min-height:0}
 #mapc{flex:1;min-width:0;display:block;cursor:grab;touch-action:none;background:var(--void)}
 .mapinfo{width:290px;border-left:1px solid var(--line);padding:16px;overflow:auto;display:flex;flex-direction:column;gap:12px}
-@media (max-width:720px){.map-main{flex-direction:column}.mapinfo{width:auto;border-left:0;border-top:1px solid var(--line);max-height:42%}}
+@media (max-width:720px){.map-main{flex-direction:column}#mapc{flex:1 1 0;min-height:0}.mapinfo{flex:none;width:auto;border-left:0;border-top:1px solid var(--line);max-height:42%}
+  .map-dock .dock-head{padding:12px 14px 10px}.map-dock .dock-head .btn{padding:6px 10px}}
 #touch{position:fixed;inset:auto 0 0 0;z-index:3;display:none;justify-content:space-between;align-items:flex-end;pointer-events:none;
   padding:0 max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 #touch .pad{display:grid;gap:8px;pointer-events:auto}
@@ -96,6 +117,7 @@ kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line-hi);pad
 #touchTop{position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:3;display:none;gap:6px}
 #touchTop button{background:rgba(13,19,33,.7);border:1px solid var(--line-hi);color:var(--ink);font-family:var(--f-display);font-size:12px;padding:8px 10px;letter-spacing:.06em}
 @media (pointer:coarse){#touch,#touchTop{display:flex}}
+body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -930,26 +952,27 @@ function bar(x,y,w,v,max,color,label){
   cx.textAlign='right';cx.fillStyle='#e1e7f2';cx.fillText(`${Math.max(0,Math.round(v))}/${Math.round(max)}`,x+w,y-4);
 }
 function drawHUD(){
-  const me=S.me,sys=S.sys,st=me.st,pad=16;
-  cx.textAlign='left';
+  // on touch screens the top button bar sits over the header and radar, so drop them below it
+  const me=S.me,sys=S.sys,st=me.st,pad=16,top=coarse.matches?54:0;let tBottom=0;
   for(const p of sys.ports)edgeMarker(p.x,p.y,p.name,'rgba(225,231,242,.7)');
   if(sys.signal&&!G.collected.has(sys.id))edgeMarker(sys.signal.x,sys.signal.y,'Signal','#ffb547');
   if(S.target&&!S.target.dead)edgeMarker(S.target.x,S.target.y,S.target.name,hostileToPlayer(S.target)?'#ff6262':'#62d5ff');
   // system header
+  cx.textAlign='left';cx.save();cx.translate(0,top);
   cx.font='600 20px "Chakra Petch",sans-serif';cx.fillStyle='#e1e7f2';cx.fillText(sys.name,pad,pad+18);
   cx.font='500 12px "IBM Plex Sans Condensed",sans-serif';cx.fillStyle=facColor(sys);cx.fillText(facName(sys)+(isWanted(sys.faction)?'  · WANTED':''),pad,pad+36);
-  cx.fillStyle='#8a96ae';cx.font='500 11px "IBM Plex Mono",monospace';cx.fillText(`DAY ${G.day}  ·  ${fmt(G.p.credits)} CR`,pad,pad+54);
+  cx.fillStyle='#8a96ae';cx.font='500 11px "IBM Plex Mono",monospace';cx.fillText(`DAY ${G.day}  ·  ${fmt(G.p.credits)} CR`,pad,pad+54);cx.restore();
   // status block
-  const bx=pad,by=H-pad-(coarse.matches?150:0)-92,bw=Math.min(210,W*.42);
+  const wide=coarse.matches&&W>H&&W>=600,bw=Math.min(210,W*.42),bx=wide?(W-bw)/2:pad,by=H-pad-(coarse.matches&&!wide?150:0)-92;
   bar(bx,by+14,bw,me.shield,st.shield,'#62d5ff','SHIELD');
   bar(bx,by+40,bw,me.hull,st.hull,'#ffb547','HULL');
-  cx.fillStyle='#8a96ae';cx.font='500 10px "IBM Plex Mono",monospace';
+  cx.fillStyle='#8a96ae';cx.font='500 10px "IBM Plex Mono",monospace';cx.textAlign='left';
   cx.fillText(`FUEL ${G.p.fuel}/${st.fuel}   CARGO ${cargoUsed()}/${st.cargo}t${st.racks?`   MSL ${G.p.ammo}`:''}`,bx,by+64);
   const nx=G.route.length?G.gal.systems[G.route[0]]:null;
   if(nx){const ready=Math.hypot(me.x,me.y)>=JUMP_DIST;cx.fillStyle=ready?'#ffb547':'#8a96ae';cx.fillText(`NEXT ▸ ${nx.name.toUpperCase()}  ${ready?'[J] READY':'· CLEAR THE RING'}  (${G.route.length} jump${G.route.length>1?'s':''})`,bx,by+82);}
   else{cx.fillStyle='#5d6880';cx.fillText(hints?'NO ROUTE · [M] MAP':'NO ROUTE',bx,by+82);}
   // radar
-  const rr=Math.min(72,W*.16),rx=W-pad-rr,ry=pad+rr,sc=rr/2200;
+  const rr=Math.min(72,W*.16,H*.13),rx=W-pad-rr,ry=pad+rr+top,sc=rr/2200;
   cx.fillStyle='rgba(11,16,29,.75)';cx.strokeStyle='#243150';cx.lineWidth=1;cx.beginPath();cx.arc(rx,ry,rr,0,TAU);cx.fill();cx.stroke();
   cx.strokeStyle='rgba(58,75,114,.6)';cx.beginPath();cx.arc(rx,ry,rr*.5,0,TAU);cx.stroke();
   cx.save();cx.beginPath();cx.arc(rx,ry,rr-1,0,TAU);cx.clip();
@@ -965,16 +988,17 @@ function drawHUD(){
     cx.fillStyle=hostileToPlayer(t)?'#ff6262':t.disabled?'#8a96ae':'#62d5ff';cx.font='600 14px "Chakra Petch",sans-serif';cx.textAlign='left';cx.fillText(t.name,tx,ty+12);
     cx.fillStyle='#8a96ae';cx.font='500 10px "IBM Plex Mono",monospace';
     cx.fillText(`${Math.round(Math.hypot(t.x-me.x,t.y-me.y))} m  ·  ${t.disabled?(t.boarded?'STRIPPED':'DISABLED · [B] BOARD'):hostileToPlayer(t)?'HOSTILE':'NEUTRAL'}`,tx,ty+28);
-    bar(tx,ty+46,tw,t.shield,t.st.shield,'#62d5ff','');bar(tx,ty+62,tw,t.hull,t.st.hull,'#ffb547','');
+    bar(tx,ty+46,tw,t.shield,t.st.shield,'#62d5ff','');bar(tx,ty+62,tw,t.hull,t.st.hull,'#ffb547','');tBottom=ty+72;
   }
   // messages
   const now=performance.now(),mw=Math.min(560,W-pad*2);cx.textAlign='center';cx.font='500 14px "IBM Plex Sans Condensed",sans-serif';
   let my=H*.62;
   for(const m of G.msgs){const age=(now-m.t)/1000;if(age>7)continue;cx.globalAlpha=clamp(7-age,0,1);cx.fillStyle=m.tone==='bad'?'#ff8a7a':m.tone==='good'?'#8fe8b4':'#e1e7f2';cx.fillText(m.text,W/2,my,mw);my+=20;}
   cx.globalAlpha=1;
-  // landing hint
-  if(!S.jump&&sys.ports.length){const p=sys.ports.reduce((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)-a.size<Math.hypot(b.x-me.x,b.y-me.y)-b.size?a:b);if(Math.hypot(p.x-me.x,p.y-me.y)<p.size+40){cx.fillStyle='#ffb547';cx.font='600 13px "Chakra Petch",sans-serif';cx.fillText(`[L] LAND ON ${p.name.toUpperCase()}`,W/2,H*.3);}}
-  if(sys.signal&&!G.collected.has(sys.id)&&Math.hypot(sys.signal.x-me.x,sys.signal.y-me.y)<110){cx.fillStyle='#ffb547';cx.font='600 13px "Chakra Petch",sans-serif';cx.fillText('[B] SCAN SIGNAL',W/2,H*.3+20);}
+  // landing hint, kept clear of the target box
+  const hy=W<600?Math.max(H*.3,tBottom+26):H*.3;
+  if(!S.jump&&sys.ports.length){const p=sys.ports.reduce((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)-a.size<Math.hypot(b.x-me.x,b.y-me.y)-b.size?a:b);if(Math.hypot(p.x-me.x,p.y-me.y)<p.size+40){cx.fillStyle='#ffb547';cx.font='600 13px "Chakra Petch",sans-serif';cx.fillText(`[L] LAND ON ${p.name.toUpperCase()}`,W/2,hy);}}
+  if(sys.signal&&!G.collected.has(sys.id)&&Math.hypot(sys.signal.x-me.x,sys.signal.y-me.y)<110){cx.fillStyle='#ffb547';cx.font='600 13px "Chakra Petch",sans-serif';cx.fillText('[B] SCAN SIGNAL',W/2,hy+20);}
   cx.textAlign='left';
 }
 function drawTitleBg(t){
@@ -989,6 +1013,7 @@ function drawTitleBg(t){
 let lastT=performance.now();
 function frame(now){
   requestAnimationFrame(frame);
+  if(document.body.dataset.mode!==mode)document.body.dataset.mode=mode;
   const el=now-lastT;
   if(mode==='space'){
     if(el<1000/75)return;
@@ -1079,22 +1104,22 @@ function renderLand(){
     const free=st.cargo-cargoUsed();
     const here=`${sys.id}.${port.i}`,illegal=GOODS.some(g=>banned(f,g.id));
     html=`<div class="row"><span class="muted">Prices shift daily.${hints?' Labels compare against the galactic average.':''}${illegal?' Banned goods sell on the black market here, and customs search holds.':''}</span><span class="mono">Free hold: ${free}t</span></div>
-    <div class="scroll-x"><table><thead><tr><th>Commodity</th><th class="r">Price</th><th></th><th class="r">Best sale seen</th><th class="r">In hold</th><th class="r">Trade</th></tr></thead><tbody>${GOODS.map(g=>{
+    <div class="scroll-x"><table class="cards trade"><thead><tr><th>Commodity</th><th class="r">Price</th><th></th><th class="r">Best sale seen</th><th class="r">In hold</th><th class="r">Trade</th></tr></thead><tbody>${GOODS.map(g=>{
       const p=price(port,g.id),rel=p/g.base,have=G.p.cargo[g.id]||0,ill=banned(f,g.id),canBuy=ill?0:Math.min(free,Math.floor(G.p.credits/p)),b=bestSeen(g.id,here);
       const tag=(ill?'<span class="chip c-bad">Illegal here</span> ':g.contra?'<span class="chip">Contraband</span> ':'')+(!hints||ill?'':rel<.8?'<span class="chip c-good">Cheap</span>':rel>1.2?'<span class="chip c-amber">High</span>':'');
       const seen=b?`<span class="num">${fmt(b.v)}</span> <span class="muted">${esc(G.gal.systems[b.sys].name)} · ${G.day-b.day?G.day-b.day+'d ago':'today'}</span>`:'<span class="muted">—</span>';
-      return `<tr><td>${g.name}</td><td class="r num">${fmt(p)}</td><td>${tag}</td><td class="r seen">${seen}</td><td class="r num">${have||'—'}</td><td><div class="acts">
+      return `<tr><td>${g.name}</td><td class="r num">${fmt(p)}</td><td>${tag}</td><td class="r seen" data-l="Best sale seen">${seen}</td><td class="r num" data-l="In hold">${have||'—'}</td><td><div class="acts">
         <button class="btn sm" data-act="buy" data-g="${g.id}" data-n="1" ${canBuy<1?'disabled':''}>Buy 1</button><button class="btn sm" data-act="buy" data-g="${g.id}" data-n="${canBuy}" ${canBuy<1?'disabled':''}>Max</button>
         <button class="btn sm" data-act="sell" data-g="${g.id}" data-n="1" ${have<1?'disabled':''}>Sell 1</button><button class="btn sm" data-act="sell" data-g="${g.id}" data-n="${have}" ${have<1?'disabled':''}>All</button></div></td></tr>`;}).join('')}</tbody></table></div>`;
   }else if(landTab==='outfit'){
     const h=HULL[G.p.hullId],u=slotsUsed(G.p.outfits);
     html=`<div class="row"><span class="muted">Gun mounts ${u.g}/${h.guns} · Module bays ${u.m}/${h.mods}${st.racks?` · Missiles ${G.p.ammo}/${st.racks*10}`:''}</span><span class="muted">Sells back at 60%</span></div>
-    <div class="scroll-x"><table><thead><tr><th>Outfit</th><th>Effect</th><th class="r">Price</th><th class="r">Fitted</th><th class="r"></th></tr></thead><tbody>${OUTFITS.filter(o=>o.tech<=port.tech).map(o=>{
+    <div class="scroll-x"><table class="cards outfit"><thead><tr><th>Outfit</th><th>Effect</th><th class="r">Price</th><th class="r">Fitted</th><th class="r"></th></tr></thead><tbody>${OUTFITS.filter(o=>o.tech<=port.tech).map(o=>{
       const n=o.type==='ammo'?G.p.ammo:G.p.outfits.filter(x=>x===o.id).length;
       let can=G.p.credits>=o.price;
       if(o.type==='gun'||o.type==='rack')can&&=u.g<h.guns;else if(o.type==='mod')can&&=u.m<h.mods;else if(o.type==='ammo')can&&=st.racks>0&&G.p.ammo+5<=st.racks*10;
       const canSell=o.type!=='ammo'&&n>0&&!(o.type==='mod'&&o.cargo&&cargoUsed()>st.cargo-o.cargo);
-      return `<tr><td>${o.name}</td><td class="muted" style="min-width:200px">${o.desc}</td><td class="r num">${fmt(o.price)}</td><td class="r num">${n||'—'}</td><td><div class="acts"><button class="btn sm" data-act="obuy" data-o="${o.id}" ${can?'':'disabled'}>Buy</button>${o.type==='ammo'?'':`<button class="btn sm" data-act="osell" data-o="${o.id}" ${canSell?'':'disabled'}>Sell</button>`}</div></td></tr>`;}).join('')}</tbody></table></div>`;
+      return `<tr><td>${o.name}</td><td class="muted" style="min-width:200px">${o.desc}</td><td class="r num">${fmt(o.price)}</td><td class="r num" data-l="Fitted">${n||'—'}</td><td><div class="acts"><button class="btn sm" data-act="obuy" data-o="${o.id}" ${can?'':'disabled'}>Buy</button>${o.type==='ammo'?'':`<button class="btn sm" data-act="osell" data-o="${o.id}" ${canSell?'':'disabled'}>Sell</button>`}</div></td></tr>`;}).join('')}</tbody></table></div>`;
   }else if(landTab==='ship'){
     const trade=tradeIn();
     html=`<div class="card"><h3>Your ship</h3><div class="row" style="justify-content:flex-start;flex-wrap:wrap"><label class="eyebrow" for="shipName">Name</label><input id="shipName" class="text-in" maxlength="24" spellcheck="false" autocomplete="off" value="${esc(G.p.name||'')}" placeholder="Unnamed">
@@ -1258,10 +1283,18 @@ mapEl.addEventListener('click',e=>{
   else if(a==='clear')G.route=[];
   drawMap();renderMapInfo();
 });
-mc.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,mx:mv.x,my:mv.y,moved:false};mc.setPointerCapture(e.pointerId);});
-mc.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.hypot(dx,dy)>5)drag.moved=true;if(drag.moved){mv.x=drag.mx-dx/mv.z;mv.y=drag.my-dy/mv.z;drawMap();}});
+// one finger drags, two fingers pinch to zoom
+const touches=new Map();let pinch=null;
+const spread=()=>{const[a,b]=[...touches.values()];return Math.hypot(a.x-b.x,a.y-b.y)||1;};
+mc.addEventListener('pointerdown',e=>{touches.set(e.pointerId,{x:e.clientX,y:e.clientY});try{mc.setPointerCapture(e.pointerId);}catch(err){}
+  if(touches.size===2){pinch={d:spread(),z:mv.z};drag=null;}else if(touches.size===1)drag={x:e.clientX,y:e.clientY,mx:mv.x,my:mv.y,moved:false};});
+mc.addEventListener('pointercancel',e=>{touches.delete(e.pointerId);pinch=null;drag=null;});
+mc.addEventListener('pointermove',e=>{if(touches.has(e.pointerId))touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch&&touches.size===2){mv.z=clamp(pinch.z*spread()/pinch.d,.35,3);drawMap();return;}
+  if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.hypot(dx,dy)>5)drag.moved=true;if(drag.moved){mv.x=drag.mx-dx/mv.z;mv.y=drag.my-dy/mv.z;drawMap();}});
 mc.addEventListener('pointerup',e=>{
-  if(drag&&!drag.moved){const r=mc.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;let best=null,bd=18;
+  touches.delete(e.pointerId);if(pinch){if(touches.size<2)pinch=null;drag=null;return;}
+  if(drag&&!drag.moved){const r=mc.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;let best=null,bd=coarse.matches?28:18;
     for(const id of mapK.known){const s=G.gal.systems[id],[x,y]=m2s(s.x,s.y),d=Math.hypot(x-px,y-py);if(d<bd){bd=d;best=id;}}
     mapSel=best;drawMap();renderMapInfo();}
   drag=null;});
