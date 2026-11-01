@@ -1,0 +1,9 @@
+{
+  "name": "lanternreach-record-radio",
+  "private": true,
+  "description": "Records Lanternreach Radio stations to MP3",
+  "type": "module",
+  "dependencies": {
+    "playwright-core": "1.58.2"
+  }
+}
