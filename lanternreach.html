@@ -60,6 +60,11 @@ td .acts{display:flex;gap:4px;justify-content:flex-end}
 .job{border:1px solid var(--line);padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:center}
 .job p{margin:0;color:var(--dim);font-size:14px;grid-column:1}
 .job .pay{font-family:var(--f-mono);color:var(--amber);text-align:right}
+.jtag{display:inline-block;font-family:var(--f-mono);font-size:12px;min-width:20px;text-align:center;border:1px solid currentColor;margin-right:8px}
+.jobmap{border:1px solid var(--line)}
+#jobmap{display:block;width:100%;height:240px}
+.jobmap-key{display:flex;flex-wrap:wrap;gap:4px 16px;padding:6px 10px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
+@media (max-width:720px){#jobmap{height:180px}}
 .title-dock{width:min(760px,100%)}
 .title-dock .dock-body{gap:18px;padding:26px 24px}
 .lede{font-size:17px;max-width:60ch;margin:0;color:var(--ink)}
@@ -431,7 +436,7 @@ const cv=$('game'),cx=cv.getContext('2d');
 let W=0,H=0,DPR=1,Z=1;
 let needsDraw=true;
 const coarse=matchMedia('(pointer:coarse)');
-function resize(){DPR=Math.min(1.5,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);Z=clamp(Math.min(W,H)/820,.5,1);needsDraw=true;if(!$('map').hidden)sizeMap();}
+function resize(){DPR=Math.min(1.5,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);Z=clamp(Math.min(W,H)/820,.5,1);needsDraw=true;if(!$('map').hidden)sizeMap();if($('jobmap'))drawJobMap();}
 addEventListener('resize',resize);resize();
 
 // each parallax layer is pre-rendered once into a 1024px tile, then blitted a few times per frame
@@ -956,14 +961,63 @@ function renderLand(){
       <dl class="kv"><dt>Hull / shield</dt><dd>${h.hull} / ${h.shield}</dd><dt>Speed</dt><dd>${h.speed}</dd><dt>Cargo / fuel</dt><dd>${h.cargo}t / ${h.fuel}</dd><dt>Guns / modules</dt><dd>${h.guns} / ${h.mods}</dd><dt>List price</dt><dd>${fmt(h.price)}</dd></dl>
       <button class="btn ${ok?'primary':''}" data-act="hbuy" data-h="${h.id}" ${ok?'':'disabled'}>${mine?'Owned':cost<=0?`Swap (+${fmt(-cost)} cr)`:`Buy for ${fmt(cost)} cr`}</button></div>`;}).join('')}</div>`;
   }else{
-    const av=availableMissions(sys,port);
-    html=`<h3>Active jobs</h3>${G.missions.length?G.missions.map(m=>`<div class="job"><strong>${esc(m.title)}</strong><span class="pay">${fmt(m.reward)} cr</span><p>${esc(m.desc)} Due day ${m.deadline}.</p><button class="btn sm" data-act="abandon" data-m="${m.id}">Abandon</button></div>`).join(''):'<p class="muted">None.</p>'}
-      <h3>Job board</h3>${av.length?av.map(m=>`<div class="job"><strong>${esc(m.title)}</strong><span class="pay">${fmt(m.reward)} cr</span><p>${esc(m.desc)} Due day ${m.deadline}.${m.tons?` Needs ${m.tons}t.`:''}</p><button class="btn sm" data-act="accept" data-m="${m.id}" ${m.tons&&cargoUsed()+m.tons>st.cargo?'disabled':''}>Accept</button></div>`).join(''):'<p class="muted">No work posted today. Check back tomorrow.</p>'}`;
+    const av=availableMissions(sys,port),jv=jobView=planJobs(av),J=id=>jv.find(j=>j.m.id===id);
+    const pairs=j=>j.fits.length?`<span class="chip c-cyan">Pairs with ${j.fits.join(', ')}</span>`:'';
+    html=`<div class="jobmap"><canvas id="jobmap" aria-label="Map of job destinations"></canvas><div class="jobmap-key"><span class="c-amber">■ Your jobs (A, B…)</span><span class="c-cyan">● Job board (1, 2…)</span><span>Hover or tap a job to trace its route</span></div></div>
+      <h3>Active jobs</h3>${G.missions.length?G.missions.map(m=>`<div class="job" data-m="${m.id}"><strong><span class="jtag c-amber">${J(m.id).tag}</span>${esc(m.title)}</strong><span class="pay">${fmt(m.reward)} cr</span><p>${esc(m.desc)} Due day ${m.deadline}.</p><button class="btn sm" data-act="abandon" data-m="${m.id}">Abandon</button></div>`).join(''):'<p class="muted">None.</p>'}
+      <h3>Job board</h3>${av.length?av.map(m=>`<div class="job" data-m="${m.id}"><strong><span class="jtag c-cyan">${J(m.id).tag}</span>${esc(m.title)}</strong><span class="pay">${fmt(m.reward)} cr</span><p>${esc(m.desc)} Due day ${m.deadline}.${m.tons?` Needs ${m.tons}t.`:''} ${pairs(J(m.id))}</p><button class="btn sm" data-act="accept" data-m="${m.id}" ${m.tons&&cargoUsed()+m.tons>st.cargo?'disabled':''}>Accept</button></div>`).join(''):'<p class="muted">No work posted today. Check back tomorrow.</p>'}`;
   }
   landEl.innerHTML=`<div class="dock">${head}<div class="tabs" role="tablist">${tabs.map(([id,l])=>`<button class="tab" role="tab" aria-selected="${landTab===id}" data-act="tab" data-t="${id}">${l}</button>`).join('')}</div>
     <div class="dock-body">${html}</div><div class="dock-foot"><span class="muted" style="font-size:13px">Game saved on landing.</span><button class="btn primary" data-act="takeoff">Take off</button></div></div>`;
   landEl.querySelector('.dock-body').scrollTop=scroll;
+  if($('jobmap'))drawJobMap();else jobView=null;
 }
+
+// ---------- job route preview ----------
+// Lettered tags for jobs you hold, numbered for the board. Two jobs pair up when one's
+// destination lies on the other's route (or they share one), so a single run covers both.
+let jobView=null,jobHL=null;
+function planJobs(av){
+  const{prev}=bfs(G.loc,allNbr);
+  const jobs=[...G.missions.map((m,i)=>({m,tag:String.fromCharCode(65+i),active:true})),...av.map((m,i)=>({m,tag:String(i+1),active:false}))];
+  for(const j of jobs)j.path=pathTo(prev,G.loc,j.m.dest)||[];
+  for(const j of jobs)j.fits=jobs.filter(o=>o!==j&&(o.m.dest===j.m.dest||j.path.includes(o.m.dest)||o.path.includes(j.m.dest))).map(o=>o.tag);
+  return jobs;
+}
+function drawJobMap(){
+  const c=$('jobmap');if(!c||!jobView)return;
+  const r=c.getBoundingClientRect(),w=r.width,h=r.height;c.width=Math.round(w*DPR);c.height=Math.round(h*DPR);
+  const g=c.getContext('2d'),sys=G.gal.systems,me=curSys(),K=knowledge();
+  g.setTransform(DPR,0,0,DPR,0,0);g.fillStyle='#060911';g.fillRect(0,0,w,h);
+  const pts=[me,...jobView.flatMap(j=>j.path.map(id=>sys[id]))];
+  const x0=Math.min(...pts.map(s=>s.x)),x1=Math.max(...pts.map(s=>s.x)),y0=Math.min(...pts.map(s=>s.y)),y1=Math.max(...pts.map(s=>s.y)),pad=36;
+  const k=Math.min(1.4,(w-pad*2)/Math.max(1,x1-x0),(h-pad*2)/Math.max(1,y1-y0)),cxm=(x0+x1)/2,cym=(y0+y1)/2;
+  const P=s=>[(s.x-cxm)*k+w/2,(s.y-cym)*k+h/2],on=([x,y])=>x>-20&&x<w+20&&y>-20&&y<h+20;
+  g.lineWidth=1;g.strokeStyle='rgba(138,150,174,.18)';
+  for(const id of K.known)for(const n of sys[id].links)if(n>id&&K.known.has(n)&&K.edgeKnown(id,n)){const a=P(sys[id]),b=P(sys[n]);if(on(a)||on(b)){g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();}}
+  g.fillStyle='#3a4b72';for(const id of K.known){const p=P(sys[id]);if(on(p)){g.beginPath();g.arc(...p,2.5,0,TAU);g.fill();}}
+  const hl=jobView.find(j=>j.m.id===jobHL);
+  const lit=j=>!hl||j===hl||hl.fits.includes(j.tag);
+  for(const j of [...jobView].sort((a,b)=>(a===hl)-(b===hl))){
+    if(!j.path.length)continue;
+    g.strokeStyle=j.active?'#ffb547':'#62d5ff';g.globalAlpha=j===hl?1:lit(j)?.55:.15;g.lineWidth=j===hl?3:1.75;
+    g.beginPath();g.moveTo(...P(me));for(const id of j.path)g.lineTo(...P(sys[id]));g.stroke();
+  }
+  g.globalAlpha=1;g.lineWidth=1.5;g.textAlign='center';
+  const dests=new Map();for(const j of jobView){if(!dests.has(j.m.dest))dests.set(j.m.dest,[]);dests.get(j.m.dest).push(j);}
+  for(const[id,js]of dests){
+    const[x,y]=P(sys[id]),act=js.some(j=>j.active);g.globalAlpha=js.some(lit)?1:.3;
+    g.strokeStyle=g.fillStyle=act?'#ffb547':'#62d5ff';g.beginPath();
+    if(act)g.rect(x-6,y-6,12,12);else g.arc(x,y,6,0,TAU);g.stroke();
+    g.font='600 12px "IBM Plex Mono",monospace';g.fillText(js.map(j=>j.tag).join(' '),x,y-11);
+    g.font='500 12px "IBM Plex Sans Condensed",sans-serif';g.fillStyle='#e1e7f2';g.fillText(sys[id].name,x,y+20);
+  }
+  g.globalAlpha=1;const[mx0,my0]=P(me);g.strokeStyle='#ffb547';g.lineWidth=2;g.beginPath();g.arc(mx0,my0,8,0,TAU);g.stroke();
+  g.fillStyle='#ffb547';g.font='500 12px "IBM Plex Sans Condensed",sans-serif';g.fillText('You',mx0,my0+22);
+}
+function setJobHL(e){const j=e.target.closest&&e.target.closest('.job[data-m]'),id=j?j.dataset.m:null;if(id!==jobHL){jobHL=id;drawJobMap();}}
+landEl.addEventListener('pointerover',setJobHL);landEl.addEventListener('focusin',setJobHL);
+landEl.addEventListener('pointerleave',()=>{jobHL=null;drawJobMap();});
 function tradeIn(){return Math.round(HULL[G.p.hullId].price*.55+G.p.outfits.reduce((a,id)=>a+OUT[id].price*.5,0));}
 landEl.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
