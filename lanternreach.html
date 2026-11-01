@@ -150,7 +150,7 @@ body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{dis
         <button class="btn" id="contGame" type="button" hidden>Continue</button>
         <span id="contInfo" class="muted mono" style="font-size:calc(13px * var(--ui))"></span>
       </div>
-      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button></div>
+      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button></div>
       <div class="keys" aria-label="Controls">
         <div><kbd>W</kbd><kbd>A</kbd><kbd>D</kbd> fly</div>
         <div><kbd>S</kbd> turn to retro</div>
@@ -191,7 +191,7 @@ body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{dis
       </div>
       <p class="desc muted">To jump, plot a route on the map, then fly outside the dashed jump ring and press J. Each jump burns one unit of fuel and takes a day. Ships drop to a disabled drift when their hull is badly damaged; fly alongside slowly and press B to board. Signals on your radar pulse amber: fly to them and press B to scan.</p>
       <div class="row" style="justify-content:flex-start"><button class="btn primary" id="resume" type="button">Resume</button><button class="btn" id="quit" type="button">Quit to title</button></div>
-      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button></div>
+      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button></div>
     </div>
   </div>
 </div>
@@ -413,15 +413,117 @@ function restore(d){
 function save(){lastSave=JSON.stringify(serialize());try{localStorage.setItem(SAVE_KEY,lastSave);}catch(e){}}
 function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
 // Hints: coaching text, price labels and job pairing. Off leaves the player to work it out.
+let AC=null,master=null,noiseBuf=null,eng=null,mus=null;const lastPlayed={};
 // Player preferences, kept per browser. The first value of each is the default.
-const PREFS={hints:['on','off'],text:['100','120','140'],speed:['100','75','50']};
-const PREF_LABEL={hints:v=>`Hints: ${v}`,text:v=>`Text: ${v}%`,speed:v=>`Speed: ${v}%`};
+const PREFS={hints:['on','off'],sound:['100','50','0'],music:['100','50','0'],text:['100','120','140'],speed:['100','75','50']};
+const PREF_LABEL={hints:v=>`Hints: ${v}`,sound:v=>v==='0'?'Sound: off':`Sound: ${v}%`,music:v=>v==='0'?'Music: off':`Music: ${v}%`,text:v=>`Text: ${v}%`,speed:v=>`Speed: ${v}%`};
 const pref={};for(const k in PREFS){let v=null;try{v=localStorage.getItem('lanternreach-'+k);}catch(e){}pref[k]=PREFS[k].includes(v)?v:PREFS[k][0];}
-let hints,ui,speed;
-function applyPrefs(){hints=pref.hints==='on';ui=+pref.text/100;speed=+pref.speed/100;document.documentElement.style.setProperty('--ui',ui);}
+let hints,ui,speed,vol,mvol;
+function applyPrefs(){vol=+pref.sound/100;if(master)master.gain.value=vol*.6;mvol=+pref.music/100;if(mus)mus.bus.gain.setTargetAtTime(mvol*.4,AC.currentTime,.4);hints=pref.hints==='on';ui=+pref.text/100;speed=+pref.speed/100;document.documentElement.style.setProperty('--ui',ui);}
 applyPrefs();
 const tip=t=>hints?' '+t:'';
-function msg(text,tone){if(!G)return;G.msgs.push({text,tone,t:performance.now()});if(G.msgs.length>6)G.msgs.shift();}
+// ---------- sound ----------
+// Everything is synthesised with Web Audio, so there are no files to load. Browsers only allow
+// audio after a user gesture, so the context starts on the first key press or tap. Sounds from
+// other ships fade with distance and pan left or right of the player.
+function audio(){
+  if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}
+    master=AC.createGain();master.gain.value=vol*.6;master.connect(AC.destination);
+    noiseBuf=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+  if(AC.state==='suspended'&&!document.hidden)AC.resume();musicStart();return AC;
+}
+for(const ev of ['pointerdown','touchend','click','keydown'])addEventListener(ev,audio,true);
+function tone(dest,{type='square',f,f2,dur,v,at=0,attack=.005}){
+  const t=AC.currentTime+at,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+attack);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(dest);o.start(t);o.stop(t+dur+.03);
+}
+function noise(dest,{filter='lowpass',f,f2,q=1,dur,v,at=0,attack=.005}){
+  const t=AC.currentTime+at,src=AC.createBufferSource(),bq=AC.createBiquadFilter(),g=AC.createGain();src.buffer=noiseBuf;
+  bq.type=filter;bq.Q.value=q;bq.frequency.setValueAtTime(f,t);if(f2)bq.frequency.exponentialRampToValueAtTime(f2,t+dur);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+attack);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  src.connect(bq);bq.connect(g);g.connect(dest);src.start(t,Math.random()*.4);src.stop(t+dur+.03);
+}
+// [minimum gap between repeats in seconds, synth]
+const SFX={
+  laser:[.05,d=>tone(d,{f:1500,f2:500,dur:.09,v:.1})],
+  ion:[.05,d=>{tone(d,{type:'sawtooth',f:900,f2:1300,dur:.12,v:.06});tone(d,{type:'sine',f:1800,f2:2400,dur:.1,v:.05});}],
+  rail:[.08,d=>{noise(d,{filter:'highpass',f:3000,dur:.12,v:.22});tone(d,{f:220,f2:60,dur:.18,v:.14});}],
+  missile:[.1,d=>noise(d,{filter:'bandpass',f:400,f2:2400,q:2,dur:.45,v:.3})],
+  shield:[.05,d=>tone(d,{type:'sine',f:1200,f2:800,dur:.08,v:.1})],
+  hull:[.05,d=>noise(d,{f:1200,f2:300,dur:.12,v:.3})],
+  hurt:[.12,d=>{noise(d,{f:800,f2:200,dur:.2,v:.45});tone(d,{f:140,f2:70,dur:.15,v:.12});}],
+  explode:[.04,(d,k=1)=>{noise(d,{f:1800,f2:60,dur:.5+k*.5,v:.55});tone(d,{type:'sine',f:110,f2:35,dur:.4+k*.4,v:.45});}],
+  disable:[.1,d=>tone(d,{type:'sawtooth',f:400,f2:60,dur:.5,v:.1})],
+  jump:[.5,d=>{tone(d,{type:'sine',f:120,f2:1600,dur:1.7,v:.18,attack:.4});noise(d,{filter:'bandpass',f:200,f2:4000,q:1.5,dur:1.7,v:.14,attack:.5});}],
+  arrive:[.5,d=>{noise(d,{f:3000,f2:200,dur:.7,v:.28});tone(d,{type:'sine',f:1400,f2:200,dur:.5,v:.1});}],
+  land:[.3,d=>{tone(d,{type:'triangle',f:523,dur:.15,v:.14});tone(d,{type:'triangle',f:784,dur:.28,v:.14,at:.12});}],
+  takeoff:[.3,d=>{tone(d,{type:'triangle',f:392,f2:784,dur:.35,v:.1});noise(d,{f:400,f2:1500,dur:.5,v:.12});}],
+  good:[.15,d=>{tone(d,{type:'triangle',f:660,dur:.12,v:.1});tone(d,{type:'triangle',f:880,dur:.2,v:.1,at:.08});}],
+  bad:[.15,d=>{tone(d,{f:300,dur:.12,v:.06});tone(d,{f:220,dur:.22,v:.06,at:.1});}],
+  click:[.03,d=>tone(d,{f:2000,dur:.025,v:.035})],
+  coin:[.04,d=>{tone(d,{type:'triangle',f:1320,dur:.06,v:.07});tone(d,{type:'triangle',f:1760,dur:.1,v:.07,at:.05});}],
+  blip:[.05,d=>tone(d,{type:'sine',f:1000,dur:.06,v:.08})],
+  scan:[.3,d=>[500,750,1000,1500].forEach((f,i)=>tone(d,{type:'triangle',f,dur:.1,v:.08,at:i*.07}))],
+  alarm:[.5,d=>{tone(d,{f:880,dur:.12,v:.05});tone(d,{f:660,dur:.12,v:.05,at:.15});}]};
+function play(name,x,y,arg){
+  if(!AC||!vol||AC.state!=='running')return;
+  let gain=1,pan=0;
+  if(x!=null&&S&&S.me){const dx=x-S.me.x,d=Math.hypot(dx,y-S.me.y);gain=Math.pow(clamp(1-d/1800,0,1),1.5);if(gain<.03)return;pan=clamp(dx/900,-1,1);}
+  const[gap,fn]=SFX[name],t=AC.currentTime;if(t-(lastPlayed[name]??-9)<gap)return;lastPlayed[name]=t;
+  const g=AC.createGain();g.gain.value=gain;
+  if(pan&&AC.createStereoPanner){const pn=AC.createStereoPanner();pn.pan.value=pan;g.connect(pn);pn.connect(master);}else g.connect(master);
+  fn(g,arg);
+}
+// a looping filtered-noise rumble while the player's engine burns
+function engine(on){
+  if(!AC||AC.state!=='running')return;
+  if(!eng){const src=AC.createBufferSource(),bq=AC.createBiquadFilter(),g=AC.createGain();src.buffer=noiseBuf;src.loop=true;bq.type='lowpass';bq.frequency.value=300;g.gain.value=0;src.connect(bq);bq.connect(g);g.connect(master);src.start();eng=g;}
+  eng.gain.setTargetAtTime(on?.16:0,AC.currentTime,.06);
+}
+// ---------- music ----------
+// Generative ambient score that never loops: pad chords in D Lydian drift past every eight
+// seconds over a low drone, with sparse bell notes, all through a long echo and a synthetic
+// reverb. Each bar is scheduled on the audio clock a little ahead of time.
+const BAR=8,PROG=[[50,57,61,64,69],[47,54,57,62,66],[43,50,54,57,61],[45,52,57,59,64]];
+const BELLS=[69,71,73,74,76,78,81,83,85,86];
+const hz=m=>440*Math.pow(2,(m-69)/12);
+function musicStart(){
+  if(mus||!AC)return;
+  const bus=AC.createGain(),mix=AC.createGain(),verb=AC.createConvolver(),echo=AC.createDelay(2),fb=AC.createGain(),tone=AC.createBiquadFilter();
+  const len=AC.sampleRate*4,ir=AC.createBuffer(2,len,AC.sampleRate);
+  for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);}
+  verb.buffer=ir;echo.delayTime.value=.55;fb.gain.value=.38;tone.type='lowpass';tone.frequency.value=2400;
+  mix.connect(bus);mix.connect(verb);verb.connect(bus);mix.connect(echo);echo.connect(tone);tone.connect(fb);fb.connect(echo);tone.connect(bus);
+  bus.gain.value=0;bus.gain.setTargetAtTime(mvol*.4,AC.currentTime,2);bus.connect(AC.destination);
+  mus={bus,mix,next:AC.currentTime+.3,bar:0};
+}
+function musicTick(){
+  if(!mus||AC.state!=='running')return;
+  while(mus.next<AC.currentTime+1.5){if(mvol)musicBar(mus.next,PROG[mus.bar%PROG.length]);mus.next+=BAR;mus.bar++;}
+}
+function musicBar(t,chord){
+  const len=BAR+4;
+  // pad: two slightly detuned voices per note behind a slowly opening filter
+  for(const m of chord){
+    const lp=AC.createBiquadFilter(),g=AC.createGain();lp.type='lowpass';lp.frequency.setValueAtTime(500,t);lp.frequency.linearRampToValueAtTime(1100,t+len/2);lp.frequency.linearRampToValueAtTime(600,t+len);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.035,t+3);g.gain.setValueAtTime(.035,t+len-4);g.gain.linearRampToValueAtTime(0,t+len);
+    for(const[type,det,lv]of[['triangle',-6,1],['sawtooth',7,.35]]){const o=AC.createOscillator(),og=AC.createGain();o.type=type;o.frequency.value=hz(m);o.detune.value=det;og.gain.value=lv;o.connect(og);og.connect(lp);o.start(t);o.stop(t+len+.1);}
+    lp.connect(g);g.connect(mus.mix);
+  }
+  // drone an octave under the chord root
+  const d=AC.createOscillator(),dg=AC.createGain();d.type='sine';d.frequency.value=hz(chord[0]-12);
+  dg.gain.setValueAtTime(0,t);dg.gain.linearRampToValueAtTime(.09,t+4);dg.gain.linearRampToValueAtTime(0,t+len);d.connect(dg);dg.connect(mus.mix);d.start(t);d.stop(t+len+.1);
+  // bells: a pure tone plus an inharmonic partial, a few per bar at random moments
+  for(let n=rint(Math.random,2,5);n>0;n--){
+    const bt=t+Math.random()*BAR,f=hz(pick(Math.random,BELLS)),v=.02+Math.random()*.025;
+    for(const[mul,lv,dur]of[[1,1,2.6],[2.76,.35,1.2]]){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f*mul;
+      g.gain.setValueAtTime(.0001,bt);g.gain.exponentialRampToValueAtTime(v*lv,bt+.01);g.gain.exponentialRampToValueAtTime(.0001,bt+dur);o.connect(g);g.connect(mus.mix);o.start(bt);o.stop(bt+dur+.05);}
+  }
+}
+
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(b&&!b.dataset.key&&!b.disabled)play('click');},true);
+
+function msg(text,tone){if(!G)return;if(tone==='good'||tone==='bad')play(tone);G.msgs.push({text,tone,t:performance.now()});if(G.msgs.length>6)G.msgs.shift();}
 function logEv(text){G.log.push({day:G.day,text});if(G.log.length>200)G.log.shift();}
 
 // ---------- world: events, news, pirate pressure, contraband ----------
@@ -676,16 +778,16 @@ function fireGuns(s){
   const n=s.st.guns.length,ca=Math.cos(s.a),sa=Math.sin(s.a);
   s.st.guns.forEach((o,i)=>{if((s.cd[i]||0)>0)return;s.cd[i]=o.rate*(s.player?1:1.25);
     const off=(i-(n-1)/2)*4,sp=(Math.random()-.5)*.03;
-    S.shots.push({x:s.x+ca*s.size*1.1-sa*off,y:s.y+sa*s.size*1.1+ca*off,vx:s.vx+Math.cos(s.a+sp)*o.speed,vy:s.vy+Math.sin(s.a+sp)*o.speed,life:o.life,o,owner:s});});
+    S.shots.push({x:s.x+ca*s.size*1.1-sa*off,y:s.y+sa*s.size*1.1+ca*off,vx:s.vx+Math.cos(s.a+sp)*o.speed,vy:s.vy+Math.sin(s.a+sp)*o.speed,life:o.life,o,owner:s});play(o.id,s.x,s.y);});
 }
 function fireMissile(s,tgt){
   if(!s.st.racks||s.rcd>0)return;
   if(s.player){if(G.p.ammo<=0){msg('No seeker missiles left.','bad');s.rcd=.6;return;}if(!tgt){msg('No target selected.'+tip('Press Tab to cycle targets.'));s.rcd=.4;return;}G.p.ammo--;}
   s.rcd=s.player?.8:2.5;
-  S.shots.push({x:s.x,y:s.y,vx:s.vx+Math.cos(s.a)*120,vy:s.vy+Math.sin(s.a)*120,a:s.a,life:MISSILE.life,o:MISSILE,owner:s,missile:true,tgt});
+  S.shots.push({x:s.x,y:s.y,vx:s.vx+Math.cos(s.a)*120,vy:s.vy+Math.sin(s.a)*120,a:s.a,life:MISSILE.life,o:MISSILE,owner:s,missile:true,tgt});play('missile',s.x,s.y);
 }
 function burst(x,y,color,n,sp){for(let i=0;i<n&&S.parts.length<900;i++){const a=Math.random()*TAU,v=Math.random()*sp;S.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.4+Math.random()*.6,max:1,color,size:1+Math.random()*2.2});}}
-function explode(s){burst(s.x,s.y,'#ffcf7a',30+s.size*2,140+s.size*8);burst(s.x,s.y,'#ff6a3a',20+s.size,90+s.size*5);S.parts.push({ring:true,x:s.x,y:s.y,life:.5,max:.5,r:s.size*5});if(!reduceMotion)S.shake=Math.min(14,S.shake+s.size*.4);}
+function explode(s){play('explode',s.x,s.y,s.size/15);burst(s.x,s.y,'#ffcf7a',30+s.size*2,140+s.size*8);burst(s.x,s.y,'#ff6a3a',20+s.size,90+s.size*5);S.parts.push({ring:true,x:s.x,y:s.y,life:.5,max:.5,r:s.size*5});if(!reduceMotion)S.shake=Math.min(14,S.shake+s.size*.4);}
 function provoke(s){
   if(s.hostile)return;s.hostile=true;
   if(s.ai.kind!=='pirate'&&S.sys.faction>=0){const f=S.sys.faction,was=isWanted(f);G.rep[f]-=4;if(!was&&isWanted(f))msg(`You are now wanted by the ${G.gal.factions[f].name}.`,'bad');}
@@ -694,12 +796,12 @@ function damage(s,o,shooter){
   if(s.dead)return;
   const d=o.dmg*(o.shieldMul||1);
   if(s.shield>=d)s.shield-=d;else{const frac=(d-s.shield)/d;s.shield=0;s.hull-=o.dmg*(o.hullMul||1)*frac;}
-  s.hitT=.12;s.lastHit=S.t;
+  s.hitT=.12;s.lastHit=S.t;play(s.shield>0?'shield':s.player?'hurt':'hull',s.x,s.y);
   if(shooter&&shooter.player&&!s.player)provoke(s);
   if(s.bountyId&&shooter&&shooter.player&&!s.called){s.called=true;msg(`${s.name} calls in backup!`,'bad');for(let i=dangerOf(S.sys)>.6?2:1;i>0;i--){const w=spawnNPC('pirate');w.ai.tgt=S.me;}}
   if(!s.player&&shooter&&!shooter.player&&s.ai.kind==='trader')s.fleeFrom=shooter;
   if(s.hull<=0)destroy(s,shooter);
-  else if(!s.player&&!s.disabled&&s.hull<s.st.hull*.22){s.disabled=true;s.shield=0;if(Math.hypot(s.x-S.me.x,s.y-S.me.y)<1600)msg(`${s.name} disabled.`);}
+  else if(!s.player&&!s.disabled&&s.hull<s.st.hull*.22){s.disabled=true;s.shield=0;play('disable',s.x,s.y);if(Math.hypot(s.x-S.me.x,s.y-S.me.y)<1600)msg(`${s.name} disabled.`);}
 }
 function destroy(s,shooter){
   s.dead=true;explode(s);
@@ -787,7 +889,8 @@ function update(dt){
       if(keys[' '])fireGuns(me);
       if(keys.f||keys.shift)fireMissile(me,S.target&&!S.target.dead?S.target:null);
     }
-    physics(me,dt);G.p.hull=me.hull;
+    physics(me,dt);G.p.hull=me.hull;engine(me.thrusting);
+    if(me.hull<me.st.hull*.25&&(S.alarmT=(S.alarmT||0)-dt)<=0){S.alarmT=1.6;play('alarm');}
   }else if(S.deadT>0){S.deadT-=dt;if(S.deadT<=0)showDeath();}
   for(const s of S.ships){s.thrusting=false;aiUpdate(s,dt);physics(s,dt);}
   // the first friendly patrol to come close scans your hold
@@ -855,7 +958,7 @@ function cycleTarget(){
   if(!list.length){S.target=null;msg('No ships in range.');return;}
   const hostile=list.filter(hostileToPlayer);
   const pool=hostile.length&&(!S.target||hostileToPlayer(S.target))?hostile:list;
-  const i=pool.indexOf(S.target);S.target=pool[(i+1)%pool.length];
+  const i=pool.indexOf(S.target);S.target=pool[(i+1)%pool.length];play('blip');
 }
 function tryLand(){
   const me=S.me,ports=S.sys.ports;
@@ -867,7 +970,7 @@ function tryLand(){
   else msg(`Nav set to ${best.name}.`+tip('Fly over it slowly and press L, or press G for autopilot.'));
 }
 function landAt(p){
-  G.port=p.i;mode='landed';
+  G.port=p.i;mode='landed';play('land');
   const sys=curSys();
   for(const m of [...G.missions])if((m.type==='cargo'||m.type==='passenger')&&m.dest===sys.id&&m.destPort===p.i)payMission(m,m.type==='cargo'?'Cargo delivered':'Passengers delivered');
   for(const m of [...G.missions])if(m.type==='contract'&&m.destPort!=null&&m.dest===sys.id&&m.destPort===p.i)stepContract(m);
@@ -878,7 +981,7 @@ function landAt(p){
 }
 function takeOff(){
   const p=curSys().ports[G.port];G.port=null;$('land').hidden=true;
-  enterSystem(G.loc,null,p);save();
+  enterSystem(G.loc,null,p);save();play('takeoff');
 }
 function tryJump(){
   const me=S.me;
@@ -893,12 +996,12 @@ function tryJump(){
     return;
   }
   if(Math.hypot(me.x,me.y)<JUMP_DIST){msg(`Too deep in ${S.sys.name}'s gravity well.`+tip('Fly past the dashed ring.'));return;}
-  const to=G.gal.systems[next];S.jump={t:0,to:next,ang:Math.atan2(to.y-S.sys.y,to.x-S.sys.x)};
+  const to=G.gal.systems[next];play('jump');S.jump={t:0,to:next,ang:Math.atan2(to.y-S.sys.y,to.x-S.sys.x)};
 }
 function doJump(){
   const from=G.loc,to=S.jump.to,chain=S.jump.auto;
   G.p.fuel--;G.day++;G.route.shift();G.stats.jumps++;
-  rollEvents(to);enterSystem(to,from);checkDeadlines();save();
+  rollEvents(to);enterSystem(to,from);checkDeadlines();save();play('arrive');
   if(!G.route.length)msg(`Arrived at ${curSys().name}. Route complete.`);
   else if(chain)S.auto={kind:'jump'};
 }
@@ -911,7 +1014,7 @@ function tryBoard(){
   const d=Math.hypot(t.x-me.x,t.y-me.y),rv=Math.hypot(t.vx-me.vx,t.vy-me.vy);
   if(d>90){msg('Move closer to board.');return;}
   if(rv>110){msg('Match speed to board.');return;}
-  t.boarded=true;G.stats.boarded++;
+  t.boarded=true;G.stats.boarded++;play('scan');
   const tier=HULL[t.hullId].price/14000,cr=Math.round((300+Math.random()*900*tier)/10)*10;
   G.p.credits+=cr;let line=`Boarded ${t.name}: ${fmt(cr)} cr`;
   const g=pick(Math.random,GOODS),free=stats().cargo-cargoUsed(),tons=Math.min(free,rint(Math.random,1,6+Math.round(tier*2)));
@@ -921,7 +1024,7 @@ function tryBoard(){
   if(t.ai.kind!=='pirate'&&sys.faction>=0){G.rep[sys.faction]-=6;msg('Boarding a lawful ship is piracy. Your record suffers.','bad');}
 }
 function scanSignal(){
-  const sys=S.sys,sg=sys.signal,R=Math.random;G.collected.add(sys.id);
+  const sys=S.sys,sg=sys.signal,R=Math.random;G.collected.add(sys.id);play('scan');
   if(sg.kind==='derelict'){const cr=rint(R,1500,6000);G.p.credits+=cr;msg(`Derelict freighter, crew long gone. Salvage sold forward: ${fmt(cr)} cr.`,'good');
     const opts=OUTFITS.filter(o=>o.type==='mod'&&o.tech<=4),o=pick(R,opts),{m}=slotsUsed(G.p.outfits);
     if(R()<.5&&m<HULL[G.p.hullId].mods){G.p.outfits.push(o.id);msg(`Recovered and fitted a working ${o.name}.`,'good');}}
@@ -1068,6 +1171,8 @@ function drawTitleBg(t){
 let lastT=performance.now();
 function frame(now){
   requestAnimationFrame(frame);
+  musicTick();
+  if(mode!=='space'||S&&S.me.dead)engine(false);
   if(document.body.dataset.mode!==mode)document.body.dataset.mode=mode;
   const el=now-lastT;
   if(mode==='space'){
@@ -1097,7 +1202,7 @@ addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
 function onKey(k){
   if(mode==='space'&&!S.me.dead){
-    if(k==='l')tryLand();else if(k==='j')tryJump();else if(k==='m')openMap();else if(k==='tab')cycleTarget();else if(k==='b')tryBoard();else if(k==='g')startAuto();else if(k==='escape'||k==='p')pause(true);
+    if(k==='l')tryLand();else if(k==='j')tryJump();else if(k==='m')openMap();else if(k==='tab')cycleTarget();else if(k==='b')tryBoard();else if(k==='g'){startAuto();play('blip');}else if(k==='escape'||k==='p')pause(true);
   }else if(mode==='map'&&(k==='m'||k==='escape'))closeMap();
   else if(mode==='paused'&&(k==='escape'||k==='p'))pause(false);
 }
@@ -1114,7 +1219,7 @@ function setPref(k,v){pref[k]=v;try{localStorage.setItem('lanternreach-'+k,v);}c
 for(const b of document.querySelectorAll('.pref-btn'))b.onclick=()=>{const k=b.dataset.pref,vs=PREFS[k];setPref(k,vs[(vs.indexOf(pref[k])+1)%vs.length]);};
 for(const k in PREFS)setPref(k,pref[k]);
 // Losing focus mid-flight (a call, another tab, another window) pauses the game.
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='space')pause(true);});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='space')pause(true);if(AC){if(document.hidden)AC.suspend();else AC.resume();}});
 addEventListener('blur',()=>{if(mode==='space')pause(true);});
 $('quit').onclick=()=>{$('pause').hidden=true;showTitle();};
 
@@ -1261,8 +1366,8 @@ landEl.addEventListener('click',e=>{
     case 'refuel':G.p.credits-=(st.fuel-G.p.fuel)*120;G.p.fuel=st.fuel;break;
     case 'repair':G.p.credits-=Math.round((st.hull-G.p.hull)*9);G.p.hull=st.hull;break;
     case 'survey':G.p.credits+=G.surveyVal;G.surveyVal=0;break;
-    case 'buy':{const n=+d.n,p=price(port,d.g);G.p.credits-=n*p;G.p.cargo[d.g]=(G.p.cargo[d.g]||0)+n;break;}
-    case 'sell':{const n=+d.n,p=price(port,d.g);G.p.credits+=n*p;G.p.cargo[d.g]-=n;if(!G.p.cargo[d.g])delete G.p.cargo[d.g];break;}
+    case 'buy':{const n=+d.n,p=price(port,d.g);play('coin');G.p.credits-=n*p;G.p.cargo[d.g]=(G.p.cargo[d.g]||0)+n;break;}
+    case 'sell':{const n=+d.n,p=price(port,d.g);play('coin');G.p.credits+=n*p;G.p.cargo[d.g]-=n;if(!G.p.cargo[d.g])delete G.p.cargo[d.g];break;}
     case 'obuy':{const o=OUT[d.o];G.p.credits-=o.price;if(o.type==='ammo')G.p.ammo+=5;else{G.p.outfits.push(o.id);if(o.hull)G.p.hull+=o.hull;if(o.type==='rack')G.p.ammo+=0;}break;}
     case 'osell':{const o=OUT[d.o],i=G.p.outfits.indexOf(o.id);if(i<0)break;G.p.outfits.splice(i,1);G.p.credits+=Math.round(o.price*.6);
       const ns=stats();G.p.fuel=Math.min(G.p.fuel,ns.fuel);G.p.hull=Math.min(G.p.hull,ns.hull);G.p.ammo=Math.min(G.p.ammo,ns.racks*10);break;}
