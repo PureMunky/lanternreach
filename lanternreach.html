@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
 <style>
 /* Layout: one full-bleed flight canvas; port, map and charter screens slide over it as docked consoles. */
-:root{
+:root{--ui:1;
   --void:#060911; --hull:#0d1321; --panel:rgba(11,16,29,.96); --line:#243150; --line-hi:#3a4b72;
   --ink:#e1e7f2; --dim:#8a96ae; --amber:#ffb547; --amber-ink:#1a1206; --cyan:#62d5ff; --red:#ff6262; --green:#72e3a0;
   --f-display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
@@ -13,7 +13,7 @@
   color-scheme:dark;
 }
 html,body{height:100%;margin:0;background:var(--void);color:var(--ink);overflow:hidden}
-body{font-family:var(--f-body);font-size:15px;line-height:1.45}
+body{font-family:var(--f-body);font-size:calc(15px * var(--ui));line-height:1.45}
 #game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
 button{font:inherit;color:inherit}
 .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:5;
@@ -22,24 +22,24 @@ button{font:inherit;color:inherit}
 .dock{width:min(960px,100%);max-height:100%;display:flex;flex-direction:column;background:var(--panel);
   border:1px solid var(--line);border-top:2px solid var(--amber);box-shadow:0 20px 60px rgba(0,0,0,.6)}
 .dock-head{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:flex-end;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid var(--line)}
-.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.eyebrow{font-family:var(--f-mono);font-size:calc(11px * var(--ui));letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.01em}
 h1{font-size:clamp(34px,7vw,64px);line-height:1;font-weight:700;letter-spacing:.02em}
-h2{font-size:26px;line-height:1.1}
-h3{font-size:17px}
+h2{font-size:calc(26px * var(--ui));line-height:1.1}
+h3{font-size:calc(17px * var(--ui))}
 .tabs{display:flex;gap:2px;flex-wrap:wrap;padding:0 20px;border-bottom:1px solid var(--line)}
 .tab{background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;cursor:pointer;color:var(--dim);
-  font-family:var(--f-display);font-size:14px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:-1px}
+  font-family:var(--f-display);font-size:calc(14px * var(--ui));letter-spacing:.06em;text-transform:uppercase;margin-bottom:-1px}
 .tab[aria-selected="true"]{color:var(--amber);border-color:var(--amber)}
 .tab:hover{color:var(--ink)}
 .dock-body{overflow:auto;padding:18px 20px;display:flex;flex-direction:column;gap:16px;min-height:0}
 .dock-foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--line)}
-.btn{background:var(--hull);border:1px solid var(--line-hi);padding:7px 12px;cursor:pointer;font-family:var(--f-display);font-size:13px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.btn{background:var(--hull);border:1px solid var(--line-hi);padding:7px 12px;cursor:pointer;font-family:var(--f-display);font-size:calc(13px * var(--ui));letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
 .btn:hover:not(:disabled){border-color:var(--amber);color:var(--amber)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .btn.primary{background:var(--amber);color:var(--amber-ink);border-color:var(--amber)}
 .btn.primary:hover:not(:disabled){filter:brightness(1.1);color:var(--amber-ink)}
-.btn.sm{padding:4px 8px;font-size:12px}
+.btn.sm{padding:4px 8px;font-size:calc(12px * var(--ui))}
 :focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .desc{max-width:65ch;color:var(--ink);margin:0}
 .muted{color:var(--dim)}
@@ -47,34 +47,35 @@ h3{font-size:17px}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 .card{border:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:calc(14px * var(--ui))}
 .kv dt{color:var(--dim)} .kv dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
 .scroll-x{overflow-x:auto}
-table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
-th{text-align:left;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:calc(14px * var(--ui))}
+th{text-align:left;font-family:var(--f-mono);font-size:calc(11px * var(--ui));letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line)}
 td{padding:7px 8px;border-bottom:1px solid rgba(36,49,80,.5);vertical-align:middle}
 td.r,th.r{text-align:right}
 td .acts{display:flex;gap:4px;justify-content:flex-end}
-.chip{display:inline-block;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:1px 6px;border:1px solid currentColor;text-transform:uppercase}
+.chip{display:inline-block;font-family:var(--f-mono);font-size:calc(11px * var(--ui));letter-spacing:.06em;padding:1px 6px;border:1px solid currentColor;text-transform:uppercase}
 .c-good{color:var(--green)} .c-bad{color:var(--red)} .c-amber{color:var(--amber)} .c-cyan{color:var(--cyan)}
 .job{border:1px solid var(--line);padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:center}
-.job p{margin:0;color:var(--dim);font-size:14px;grid-column:1}
+.job p{margin:0;color:var(--dim);font-size:calc(14px * var(--ui));grid-column:1}
 .job .pay{font-family:var(--f-mono);color:var(--amber);text-align:right}
-.jtag{display:inline-block;font-family:var(--f-mono);font-size:12px;min-width:20px;text-align:center;border:1px solid currentColor;margin-right:8px}
+.jtag{display:inline-block;font-family:var(--f-mono);font-size:calc(12px * var(--ui));min-width:20px;text-align:center;border:1px solid currentColor;margin-right:8px}
 .jobmap{border:1px solid var(--line)}
 #jobmap{display:block;width:100%;height:240px}
-.jobmap-key{display:flex;flex-wrap:wrap;gap:4px 16px;padding:6px 10px;border-top:1px solid var(--line);font-size:13px;color:var(--dim)}
+.jobmap-key{display:flex;flex-wrap:wrap;gap:4px 16px;padding:6px 10px;border-top:1px solid var(--line);font-size:calc(13px * var(--ui));color:var(--dim)}
 @media (max-width:720px){#jobmap{height:180px}}
 .text-in{background:var(--void);border:1px solid var(--line-hi);color:var(--ink);font:inherit;padding:6px 10px;width:min(220px,100%)}
 .swatch{width:26px;height:26px;border:2px solid var(--line-hi);cursor:pointer;padding:0}
 .swatch[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:2px}
-.log{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.log{display:flex;flex-direction:column;gap:4px;font-size:calc(14px * var(--ui))}
 .log div{display:flex;gap:10px}.log .mono{color:var(--dim);min-width:44px}
-.ledger{display:grid;grid-template-columns:1fr auto;gap:0 12px;font-size:13px;margin-top:4px}
-details summary{cursor:pointer;font-size:14px}
-.seen{font-size:12px;white-space:nowrap}
+.ledger{display:grid;grid-template-columns:1fr auto;gap:0 12px;font-size:calc(13px * var(--ui));margin-top:4px}
+details summary{cursor:pointer;font-size:calc(14px * var(--ui))}
+.seen{font-size:calc(12px * var(--ui));white-space:nowrap}
+@media (max-width:640px){.tabs{flex:none;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:0 8px}.tabs::-webkit-scrollbar{display:none}.tab{flex:none;padding:10px 10px}}
 @media (max-height:480px){
-  .dock-head{padding:8px 16px 6px}.dock-head h2{font-size:20px}.dock-head .eyebrow{font-size:10px}
+  .dock-head{padding:8px 16px 6px}.dock-head h2{font-size:calc(20px * var(--ui))}.dock-head .eyebrow{font-size:calc(10px * var(--ui))}
   .tabs{padding:0 12px}.tab{padding:6px 10px}
   .dock-body{padding:10px 16px;gap:10px}.dock-foot{padding:6px 16px}
 }
@@ -84,7 +85,7 @@ details summary{cursor:pointer;font-size:14px}
   table.cards,table.cards tbody{display:block;min-width:0}
   table.cards tr{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:10px 0;border-bottom:1px solid rgba(36,49,80,.5)}
   table.cards td{border:0;padding:0;text-align:left;min-width:0!important}
-  table.cards td[data-l]::before{content:attr(data-l);color:var(--dim);font-size:12px;margin-right:6px}
+  table.cards td[data-l]::before{content:attr(data-l);color:var(--dim);font-size:calc(12px * var(--ui));margin-right:6px}
   table.cards td:nth-child(1){font-weight:600}
   table.cards td:nth-child(2){text-align:right}
   table.cards .acts{justify-content:flex-start;flex-wrap:wrap}
@@ -95,12 +96,12 @@ details summary{cursor:pointer;font-size:14px}
 }
 .title-dock{width:min(760px,100%)}
 .title-dock .dock-body{gap:18px;padding:26px 24px}
-.lede{font-size:17px;max-width:60ch;margin:0;color:var(--ink)}
+.lede{font-size:calc(17px * var(--ui));max-width:60ch;margin:0;color:var(--ink)}
 .seedrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.seedrow input{background:var(--void);border:1px solid var(--line-hi);color:var(--ink);font-family:var(--f-mono);font-size:15px;padding:7px 10px;width:min(240px,100%)}
-.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;font-size:14px}
+.seedrow input{background:var(--void);border:1px solid var(--line-hi);color:var(--ink);font-family:var(--f-mono);font-size:calc(15px * var(--ui));padding:7px 10px;width:min(240px,100%)}
+.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px;font-size:calc(14px * var(--ui))}
 .keys div{display:flex;gap:10px;align-items:baseline}
-kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line-hi);padding:0 5px;min-width:22px;text-align:center;color:var(--amber);background:var(--void)}
+kbd{font-family:var(--f-mono);font-size:calc(12px * var(--ui));border:1px solid var(--line-hi);padding:0 5px;min-width:22px;text-align:center;color:var(--amber);background:var(--void)}
 .map-dock{width:min(1180px,100%);height:100%}
 .map-main{flex:1;display:flex;min-height:0}
 #mapc{flex:1;min-width:0;display:block;cursor:grab;touch-action:none;background:var(--void)}
@@ -115,6 +116,7 @@ kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line-hi);pad
 #touch button{height:58px;background:rgba(13,19,33,.7);border:1px solid var(--line-hi);color:var(--ink);font-family:var(--f-display);font-size:13px;letter-spacing:.05em;user-select:none;-webkit-user-select:none}
 #touch button:active{border-color:var(--amber);color:var(--amber)}
 #touchTop{position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:3;display:none;gap:6px}
+@media (max-width:420px){#touchTop{gap:4px}#touchTop button{padding:8px 7px}}
 #touchTop button{background:rgba(13,19,33,.7);border:1px solid var(--line-hi);color:var(--ink);font-family:var(--f-display);font-size:12px;padding:8px 10px;letter-spacing:.06em}
 @media (pointer:coarse){#touch,#touchTop{display:flex}}
 body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{display:none}
@@ -124,7 +126,7 @@ body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{dis
 <canvas id="game" aria-label="Flight view"></canvas>
 
 <div id="touchTop" aria-hidden="true">
-  <button data-key="l">LAND</button><button data-key="j">JUMP</button><button data-key="m">MAP</button><button data-key="tab">TARGET</button><button data-key="b">BOARD</button>
+  <button data-key="l">LAND</button><button data-key="j">JUMP</button><button data-key="m">MAP</button><button data-key="tab">TARGET</button><button data-key="b">BOARD</button><button data-key="g">AUTO</button>
 </div>
 <div id="touch" aria-hidden="true">
   <div class="pad l"><button data-key="a">◀</button><button data-key="w">THRUST</button><button data-key="d">▶</button><span></span><button data-key="s">RETRO</button><span></span></div>
@@ -146,9 +148,9 @@ body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{dis
         <button class="btn primary" id="newGame" type="button">Launch new charter</button>
         <button class="btn" id="daily" type="button">Daily galaxy</button>
         <button class="btn" id="contGame" type="button" hidden>Continue</button>
-        <button class="btn hints-btn" type="button" aria-pressed="true">Hints: on</button>
-        <span id="contInfo" class="muted mono" style="font-size:13px"></span>
+        <span id="contInfo" class="muted mono" style="font-size:calc(13px * var(--ui))"></span>
       </div>
+      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button></div>
       <div class="keys" aria-label="Controls">
         <div><kbd>W</kbd><kbd>A</kbd><kbd>D</kbd> fly</div>
         <div><kbd>S</kbd> turn to retro</div>
@@ -159,6 +161,7 @@ body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{dis
         <div><kbd>M</kbd> galaxy map and routes</div>
         <div><kbd>J</kbd> hyperjump along route</div>
         <div><kbd>B</kbd> board ship or scan signal</div>
+        <div><kbd>G</kbd> autopilot: land, or fly out and jump</div>
         <div><kbd>Esc</kbd> pause and controls</div>
       </div>
     </div>
@@ -184,10 +187,11 @@ body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{dis
       <div class="keys">
         <div><kbd>W</kbd> thrust</div><div><kbd>A</kbd><kbd>D</kbd> turn</div><div><kbd>S</kbd> turn to retro</div>
         <div><kbd>Space</kbd> guns</div><div><kbd>F</kbd> seeker missile</div><div><kbd>Tab</kbd> cycle target</div>
-        <div><kbd>L</kbd> land</div><div><kbd>M</kbd> map</div><div><kbd>J</kbd> jump</div><div><kbd>B</kbd> board or scan</div>
+        <div><kbd>L</kbd> land</div><div><kbd>M</kbd> map</div><div><kbd>J</kbd> jump</div><div><kbd>B</kbd> board or scan</div><div><kbd>G</kbd> autopilot</div>
       </div>
       <p class="desc muted">To jump, plot a route on the map, then fly outside the dashed jump ring and press J. Each jump burns one unit of fuel and takes a day. Ships drop to a disabled drift when their hull is badly damaged; fly alongside slowly and press B to board. Signals on your radar pulse amber: fly to them and press B to scan.</p>
-      <div class="row" style="justify-content:flex-start"><button class="btn primary" id="resume" type="button">Resume</button><button class="btn" id="quit" type="button">Quit to title</button><button class="btn hints-btn" type="button" aria-pressed="true">Hints: on</button></div>
+      <div class="row" style="justify-content:flex-start"><button class="btn primary" id="resume" type="button">Resume</button><button class="btn" id="quit" type="button">Quit to title</button></div>
+      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button></div>
     </div>
   </div>
 </div>
@@ -409,8 +413,13 @@ function restore(d){
 function save(){lastSave=JSON.stringify(serialize());try{localStorage.setItem(SAVE_KEY,lastSave);}catch(e){}}
 function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
 // Hints: coaching text, price labels and job pairing. Off leaves the player to work it out.
-const HINTS_KEY='lanternreach-hints';
-let hints=true;try{hints=localStorage.getItem(HINTS_KEY)!=='off';}catch(e){}
+// Player preferences, kept per browser. The first value of each is the default.
+const PREFS={hints:['on','off'],text:['100','120','140'],speed:['100','75','50']};
+const PREF_LABEL={hints:v=>`Hints: ${v}`,text:v=>`Text: ${v}%`,speed:v=>`Speed: ${v}%`};
+const pref={};for(const k in PREFS){let v=null;try{v=localStorage.getItem('lanternreach-'+k);}catch(e){}pref[k]=PREFS[k].includes(v)?v:PREFS[k][0];}
+let hints,ui,speed;
+function applyPrefs(){hints=pref.hints==='on';ui=+pref.text/100;speed=+pref.speed/100;document.documentElement.style.setProperty('--ui',ui);}
+applyPrefs();
 const tip=t=>hints?' '+t:'';
 function msg(text,tone){if(!G)return;G.msgs.push({text,tone,t:performance.now()});if(G.msgs.length>6)G.msgs.shift();}
 function logEv(text){G.log.push({day:G.day,text});if(G.log.length>200)G.log.shift();}
@@ -766,10 +775,15 @@ function update(dt){
       if(j.t>.5&&al<.1){me.jumping=true;thrust(me,dt,10);}
       if(j.t>1.9){doJump();return;}
     }else{
+      const manual=keys.a||keys.d||keys.w||keys.s||keys.arrowleft||keys.arrowright||keys.arrowup||keys.arrowdown;
+      if(S.auto&&manual){S.auto=null;msg('Autopilot off.');}
+      if(S.auto)autoFly(dt);
+      else{
       if(keys.a||keys.arrowleft)me.a-=me.st.turn*dt;
       if(keys.d||keys.arrowright)me.a+=me.st.turn*dt;
       if(keys.w||keys.arrowup)thrust(me,dt);
       if(keys.s||keys.arrowdown){const sp=Math.hypot(me.vx,me.vy);if(sp>5)steer(me,Math.atan2(-me.vy,-me.vx),dt);}
+      }
       if(keys[' '])fireGuns(me);
       if(keys.f||keys.shift)fireMissile(me,S.target&&!S.target.dead?S.target:null);
     }
@@ -806,6 +820,35 @@ function update(dt){
   if(S.spawnT<=0){S.spawnT=(7+Math.random()*12)/(.5+S.sys.traffic);if(S.ships.length<10)spawnNPC();}
 }
 
+// ---------- autopilot ----------
+// With a route plotted it flies out past the jump ring and jumps, hop after hop; otherwise it
+// lands at the nav target or nearest port. It matches velocity to a target velocity: flat out
+// when far away, braking on approach so it arrives slow enough to land. Steering cancels it.
+function startAuto(){
+  if(S.jump||S.me.dead)return;
+  if(S.auto){S.auto=null;msg('Autopilot off.');return;}
+  if(G.route.length){S.auto={kind:'jump'};msg(`Autopilot: flying out to jump for ${G.gal.systems[G.route[0]].name}.`);return;}
+  const me=S.me,ports=S.sys.ports;
+  if(!ports.length){msg('Autopilot: nowhere to land here.'+tip('Plot a route on the map (M) to fly out and jump.'));return;}
+  const p=S.nav||ports.reduce((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)<Math.hypot(b.x-me.x,b.y-me.y)?a:b);
+  S.nav=p;S.auto={kind:'land',p};msg(`Autopilot: landing on ${p.name}.`);
+}
+function autoFly(dt){
+  const a=S.auto,me=S.me,st=me.st,land=a.kind==='land';let tx,ty;
+  if(land){tx=a.p.x;ty=a.p.y;}
+  else{
+    const to=G.gal.systems[G.route[0]];if(!to){S.auto=null;return;}
+    if(Math.hypot(me.x,me.y)>=JUMP_DIST+20){S.auto=null;tryJump();if(S.jump)S.jump.auto=true;return;}
+    const ang=Math.atan2(to.y-S.sys.y,to.x-S.sys.x);tx=Math.cos(ang)*(JUMP_DIST+250);ty=Math.sin(ang)*(JUMP_DIST+250);
+  }
+  const dx=tx-me.x,dy=ty-me.y,d=Math.max(1,Math.hypot(dx,dy)),sp=Math.hypot(me.vx,me.vy);
+  if(land&&d<a.p.size*.6&&sp<90){S.auto=null;landAt(a.p);return;}
+  const want=land?Math.min(st.speed,Math.sqrt(2*st.accel*.6*Math.max(0,d-10))):st.speed;
+  const dvx=dx/d*want-me.vx,dvy=dy/d*want-me.vy,dv=Math.hypot(dvx,dvy);
+  if(dv<8)return;
+  if(steer(me,Math.atan2(dvy,dvx),dt)<.35)thrust(me,dt,Math.min(1,dv/60));
+}
+
 // ---------- player actions ----------
 function cycleTarget(){
   const list=S.ships.filter(s=>!s.dead).sort((a,b)=>Math.hypot(a.x-S.me.x,a.y-S.me.y)-Math.hypot(b.x-S.me.x,b.y-S.me.y));
@@ -821,7 +864,7 @@ function tryLand(){
   S.nav=best;const sp=Math.hypot(me.vx,me.vy);
   if(bd<40&&sp<150)landAt(best);
   else if(bd<40)msg('Too fast to land.'+tip('Hold S to turn retro and burn.'));
-  else msg(`Nav set to ${best.name}.`+tip('Fly over it slowly and press L.'));
+  else msg(`Nav set to ${best.name}.`+tip('Fly over it slowly and press L, or press G for autopilot.'));
 }
 function landAt(p){
   G.port=p.i;mode='landed';
@@ -853,10 +896,11 @@ function tryJump(){
   const to=G.gal.systems[next];S.jump={t:0,to:next,ang:Math.atan2(to.y-S.sys.y,to.x-S.sys.x)};
 }
 function doJump(){
-  const from=G.loc,to=S.jump.to;
+  const from=G.loc,to=S.jump.to,chain=S.jump.auto;
   G.p.fuel--;G.day++;G.route.shift();G.stats.jumps++;
   rollEvents(to);enterSystem(to,from);checkDeadlines();save();
   if(!G.route.length)msg(`Arrived at ${curSys().name}. Route complete.`);
+  else if(chain)S.auto={kind:'jump'};
 }
 function tryBoard(){
   const me=S.me,sys=S.sys;
@@ -915,7 +959,7 @@ function drawWorld(){
     cx.save();cx.translate(p.x,p.y);if(!p.station)cx.rotate(Math.atan2(-p.y,-p.x)+Math.PI*.75);else cx.rotate(S.t*.05);
     cx.drawImage(p.img,-p.img.width/2,-p.img.height/2);cx.restore();
     if(S.nav===p){cx.strokeStyle='rgba(255,181,71,.6)';cx.lineWidth=1.5/Z;cx.setLineDash([6/Z,6/Z]);cx.beginPath();cx.arc(p.x,p.y,p.size+18,0,TAU);cx.stroke();cx.setLineDash([]);}
-    cx.fillStyle='rgba(225,231,242,.75)';cx.font=`500 ${12/Z}px "IBM Plex Sans Condensed",sans-serif`;cx.textAlign='center';cx.fillText(p.name,p.x,p.y+p.size+22/Z+6);
+    cx.fillStyle='rgba(225,231,242,.75)';cx.font=`500 ${12*ui/Z}px "IBM Plex Sans Condensed",sans-serif`;cx.textAlign='center';cx.fillText(p.name,p.x,p.y+p.size+22/Z+6);
   }
   if(sys.signal&&!G.collected.has(sys.id)){const sg=sys.signal,pl=.5+.5*Math.sin(S.t*4);cx.strokeStyle=`rgba(255,181,71,${.4+pl*.5})`;cx.lineWidth=2/Z;cx.beginPath();cx.arc(sg.x,sg.y,10+pl*8,0,TAU);cx.stroke();cx.fillStyle='#ffb547';cx.fillRect(sg.x-3,sg.y-3,6,6);}
   cx.globalCompositeOperation='lighter';
@@ -937,7 +981,7 @@ function drawWorld(){
   cx.setTransform(DPR,0,0,DPR,0,0);
   if(S.jump&&S.jump.t>.6){cx.fillStyle=`rgba(220,240,255,${clamp((S.jump.t-1.5)*2.5,0,1)})`;cx.fillRect(0,0,W,H);}
 }
-function toScreen(x,y){return[(x-S.me.x)*Z+W/2,(y-S.me.y)*Z+H/2];}
+function toScreen(x,y){return[(x-S.me.x)*Z/ui+W/2,(y-S.me.y)*Z/ui+H/2];}
 function edgeMarker(x,y,label,color){
   const[sx,sy]=toScreen(x,y),m=36;if(sx>m&&sx<W-m&&sy>m&&sy<H-m)return;
   const a=Math.atan2(sy-H/2,sx-W/2),hw=W/2-m,hh=H/2-m,k=Math.min(hw/Math.abs(Math.cos(a)||1e-6),hh/Math.abs(Math.sin(a)||1e-6));
@@ -951,9 +995,11 @@ function bar(x,y,w,v,max,color,label){
   cx.fillStyle='#8a96ae';cx.font='500 10px "IBM Plex Mono",monospace';cx.textAlign='left';cx.fillText(label,x,y-4);
   cx.textAlign='right';cx.fillStyle='#e1e7f2';cx.fillText(`${Math.max(0,Math.round(v))}/${Math.round(max)}`,x+w,y-4);
 }
-function drawHUD(){
+// The HUD is drawn in a space scaled by the text-size setting, with W and H shrunk to match.
+function drawHUD(){const W0=W,H0=H;W/=ui;H/=ui;cx.setTransform(DPR*ui,0,0,DPR*ui,0,0);try{hud();}finally{W=W0;H=H0;cx.setTransform(DPR,0,0,DPR,0,0);}}
+function hud(){
   // on touch screens the top button bar sits over the header and radar, so drop them below it
-  const me=S.me,sys=S.sys,st=me.st,pad=16,top=coarse.matches?54:0;let tBottom=0;
+  const me=S.me,sys=S.sys,st=me.st,pad=16,top=coarse.matches?54/ui:0;let tBottom=0;
   for(const p of sys.ports)edgeMarker(p.x,p.y,p.name,'rgba(225,231,242,.7)');
   if(sys.signal&&!G.collected.has(sys.id))edgeMarker(sys.signal.x,sys.signal.y,'Signal','#ffb547');
   if(S.target&&!S.target.dead)edgeMarker(S.target.x,S.target.y,S.target.name,hostileToPlayer(S.target)?'#ff6262':'#62d5ff');
@@ -963,7 +1009,17 @@ function drawHUD(){
   cx.font='500 12px "IBM Plex Sans Condensed",sans-serif';cx.fillStyle=facColor(sys);cx.fillText(facName(sys)+(isWanted(sys.faction)?'  · WANTED':''),pad,pad+36);
   cx.fillStyle='#8a96ae';cx.font='500 11px "IBM Plex Mono",monospace';cx.fillText(`DAY ${G.day}  ·  ${fmt(G.p.credits)} CR`,pad,pad+54);cx.restore();
   // status block
-  const wide=coarse.matches&&W>H&&W>=600,bw=Math.min(210,W*.42),bx=wide?(W-bw)/2:pad,by=H-pad-(coarse.matches&&!wide?150:0)-92;
+  const wide=coarse.matches&&W>H&&W>=600,bw=Math.min(210,W*.42),bx=wide?(W-bw)/2:pad,by=H-pad-(coarse.matches&&!wide?150/ui:0)-92;
+  // action prompts: on narrow screens they stack above the status block, on wide ones the
+  // land/scan prompts sit centred above the ship
+  const narrow=W<600,prompts=[];
+  if(S.auto)prompts.push(S.auto.kind==='land'?`AUTOPILOT ▸ LANDING ON ${S.auto.p.name.toUpperCase()}`:`AUTOPILOT ▸ JUMP TO ${(G.gal.systems[G.route[0]]?.name||'').toUpperCase()}`);
+  const centred=[];
+  if(!S.jump&&sys.ports.length){const p=sys.ports.reduce((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)-a.size<Math.hypot(b.x-me.x,b.y-me.y)-b.size?a:b);if(Math.hypot(p.x-me.x,p.y-me.y)<p.size+40)(narrow?prompts:centred).push(`[L] LAND ON ${p.name.toUpperCase()}`);}
+  if(sys.signal&&!G.collected.has(sys.id)&&Math.hypot(sys.signal.x-me.x,sys.signal.y-me.y)<110)(narrow?prompts:centred).push('[B] SCAN SIGNAL');
+  cx.fillStyle='#ffb547';cx.font='600 12px "Chakra Petch",sans-serif';cx.textAlign='left';
+  prompts.forEach((t,i)=>cx.fillText(t,bx,by-14-(prompts.length-1-i)*18,W-pad*2));
+  const promptTop=by-14-prompts.length*18;
   bar(bx,by+14,bw,me.shield,st.shield,'#62d5ff','SHIELD');
   bar(bx,by+40,bw,me.hull,st.hull,'#ffb547','HULL');
   cx.fillStyle='#8a96ae';cx.font='500 10px "IBM Plex Mono",monospace';cx.textAlign='left';
@@ -985,20 +1041,19 @@ function drawHUD(){
   // target box
   if(S.target&&!S.target.dead){
     const t=S.target,tw=Math.min(210,W*.42),tx=W-pad-tw,ty=ry+rr+18;
-    cx.fillStyle=hostileToPlayer(t)?'#ff6262':t.disabled?'#8a96ae':'#62d5ff';cx.font='600 14px "Chakra Petch",sans-serif';cx.textAlign='left';cx.fillText(t.name,tx,ty+12);
+    cx.fillStyle=hostileToPlayer(t)?'#ff6262':t.disabled?'#8a96ae':'#62d5ff';cx.font='600 14px "Chakra Petch",sans-serif';cx.textAlign='left';cx.fillText(t.name,tx,ty+12,tw);
     cx.fillStyle='#8a96ae';cx.font='500 10px "IBM Plex Mono",monospace';
     cx.fillText(`${Math.round(Math.hypot(t.x-me.x,t.y-me.y))} m  ·  ${t.disabled?(t.boarded?'STRIPPED':'DISABLED · [B] BOARD'):hostileToPlayer(t)?'HOSTILE':'NEUTRAL'}`,tx,ty+28);
     bar(tx,ty+46,tw,t.shield,t.st.shield,'#62d5ff','');bar(tx,ty+62,tw,t.hull,t.st.hull,'#ffb547','');tBottom=ty+72;
   }
   // messages
   const now=performance.now(),mw=Math.min(560,W-pad*2);cx.textAlign='center';cx.font='500 14px "IBM Plex Sans Condensed",sans-serif';
-  let my=H*.62;
-  for(const m of G.msgs){const age=(now-m.t)/1000;if(age>7)continue;cx.globalAlpha=clamp(7-age,0,1);cx.fillStyle=m.tone==='bad'?'#ff8a7a':m.tone==='good'?'#8fe8b4':'#e1e7f2';cx.fillText(m.text,W/2,my,mw);my+=20;}
+  // narrow screens show only the newest two, between the target box and the prompts
+  const shown=G.msgs.filter(m=>(now-m.t)/1000<=7).slice(narrow?-2:0);let my=Math.min(H*.62,promptTop-14-shown.length*20);
+  if(narrow)my=Math.max(my,tBottom+22);
+  for(const m of shown){const age=(now-m.t)/1000;cx.globalAlpha=clamp(7-age,0,1);cx.fillStyle=m.tone==='bad'?'#ff8a7a':m.tone==='good'?'#8fe8b4':'#e1e7f2';cx.fillText(m.text,W/2,my,mw);my+=20;}
   cx.globalAlpha=1;
-  // landing hint, kept clear of the target box
-  const hy=W<600?Math.max(H*.3,tBottom+26):H*.3;
-  if(!S.jump&&sys.ports.length){const p=sys.ports.reduce((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)-a.size<Math.hypot(b.x-me.x,b.y-me.y)-b.size?a:b);if(Math.hypot(p.x-me.x,p.y-me.y)<p.size+40){cx.fillStyle='#ffb547';cx.font='600 13px "Chakra Petch",sans-serif';cx.fillText(`[L] LAND ON ${p.name.toUpperCase()}`,W/2,hy);}}
-  if(sys.signal&&!G.collected.has(sys.id)&&Math.hypot(sys.signal.x-me.x,sys.signal.y-me.y)<110){cx.fillStyle='#ffb547';cx.font='600 13px "Chakra Petch",sans-serif';cx.fillText('[B] SCAN SIGNAL',W/2,hy+20);}
+  cx.fillStyle='#ffb547';cx.font='600 13px "Chakra Petch",sans-serif';centred.forEach((t,i)=>cx.fillText(t,W/2,H*.3+i*20));
   cx.textAlign='left';
 }
 function drawTitleBg(t){
@@ -1017,7 +1072,7 @@ function frame(now){
   const el=now-lastT;
   if(mode==='space'){
     if(el<1000/75)return;
-    lastT=now;update(Math.min(.05,el/1000));if(mode==='space'){drawWorld();drawHUD();}
+    lastT=now;update(Math.min(.05,el/1000)*speed);if(mode==='space'){drawWorld();drawHUD();}
     needsDraw=false;
   }else if(mode==='title'){
     if((reduceMotion&&!needsDraw)||el<50)return;
@@ -1042,7 +1097,7 @@ addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
 function onKey(k){
   if(mode==='space'&&!S.me.dead){
-    if(k==='l')tryLand();else if(k==='j')tryJump();else if(k==='m')openMap();else if(k==='tab')cycleTarget();else if(k==='b')tryBoard();else if(k==='escape'||k==='p')pause(true);
+    if(k==='l')tryLand();else if(k==='j')tryJump();else if(k==='m')openMap();else if(k==='tab')cycleTarget();else if(k==='b')tryBoard();else if(k==='g')startAuto();else if(k==='escape'||k==='p')pause(true);
   }else if(mode==='map'&&(k==='m'||k==='escape'))closeMap();
   else if(mode==='paused'&&(k==='escape'||k==='p'))pause(false);
 }
@@ -1053,11 +1108,14 @@ document.querySelectorAll('[data-key]').forEach(b=>{
 });
 function pause(on){if(on){mode='paused';$('pause').hidden=false;$('resume').focus();}else{$('pause').hidden=true;mode='space';}}
 $('resume').onclick=()=>pause(false);
-function setHints(on){hints=on;try{localStorage.setItem(HINTS_KEY,on?'on':'off');}catch(e){}
-  for(const b of document.querySelectorAll('.hints-btn')){b.textContent=`Hints: ${on?'on':'off'}`;b.setAttribute('aria-pressed',on);}
+function setPref(k,v){pref[k]=v;try{localStorage.setItem('lanternreach-'+k,v);}catch(e){}applyPrefs();
+  for(const b of document.querySelectorAll('.pref-btn'))b.textContent=PREF_LABEL[b.dataset.pref](pref[b.dataset.pref]);
   if(G&&!landEl.hidden)renderLand();if(G&&!mapEl.hidden){drawMap();renderMapInfo();}needsDraw=true;}
-for(const b of document.querySelectorAll('.hints-btn'))b.onclick=()=>setHints(!hints);
-setHints(hints);
+for(const b of document.querySelectorAll('.pref-btn'))b.onclick=()=>{const k=b.dataset.pref,vs=PREFS[k];setPref(k,vs[(vs.indexOf(pref[k])+1)%vs.length]);};
+for(const k in PREFS)setPref(k,pref[k]);
+// Losing focus mid-flight (a call, another tab, another window) pauses the game.
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='space')pause(true);});
+addEventListener('blur',()=>{if(mode==='space')pause(true);});
 $('quit').onclick=()=>{$('pause').hidden=true;showTitle();};
 
 // ---------- port screen ----------
@@ -1069,7 +1127,7 @@ function renderLand(){
   const body=landEl.querySelector('.dock-body'),scroll=body?body.scrollTop:0;
   const sys=curSys(),port=sys.ports[G.port],st=stats(),f=sys.faction;
   const head=`<div class="dock-head"><div><div class="eyebrow">${esc(port.kind)} · ${esc(sys.name)} · Tech ${port.tech}</div><h2>${esc(port.name)}</h2></div>
-    <div class="row mono" style="font-size:13px;gap:16px"><span>Day ${G.day}</span><span class="c-amber">${fmt(G.p.credits)} cr</span><span>Hold ${cargoUsed()}/${st.cargo}t</span><span>Fuel ${G.p.fuel}/${st.fuel}</span></div></div>`;
+    <div class="row mono" style="font-size:calc(13px * var(--ui));gap:16px"><span>Day ${G.day}</span><span class="c-amber">${fmt(G.p.credits)} cr</span><span>Hold ${cargoUsed()}/${st.cargo}t</span><span>Fuel ${G.p.fuel}/${st.fuel}</span></div></div>`;
   if(isWanted(f)){
     const fine=2000+Math.round(-G.rep[f]*150);
     landEl.innerHTML=`<div class="dock">${head}<div class="dock-body"><h3 class="c-bad">Docking clearance refused</h3><p class="desc">Port authority of the ${esc(G.gal.factions[f].name)} has your transponder on its wanted list. Pay the fine of <span class="mono c-amber">${fmt(fine)} cr</span> to clear your record, or leave.</p></div>
@@ -1097,7 +1155,7 @@ function renderLand(){
         <dt>Systems charted</dt><dd>${G.visited.size} / ${G.gal.systems.length}</dd><dt>Standing</dt><dd>${repTxt}</dd><dt>Authority</dt><dd style="color:${facColor(sys)}">${esc(facName(sys))}</dd></dl></div>
     </div>
     <div class="grid2">
-      <div class="card"><h3>Station news</h3>${news.length?news.map(e=>`<div><strong>${esc(e.title)}</strong><p class="desc muted" style="font-size:14px;margin:2px 0 8px">${esc(e.desc)} Expected to last until about day ${e.end}.</p></div>`).join(''):'<p class="muted">Nothing worth repeating.</p>'}</div>
+      <div class="card"><h3>Station news</h3>${news.length?news.map(e=>`<div><strong>${esc(e.title)}</strong><p class="desc muted" style="font-size:calc(14px * var(--ui));margin:2px 0 8px">${esc(e.desc)} Expected to last until about day ${e.end}.</p></div>`).join(''):'<p class="muted">Nothing worth repeating.</p>'}</div>
       <div class="card"><h3>Captain's log</h3><div class="log">${logHtml(7)}</div></div>
     </div>`;
   }else if(landTab==='trade'){
@@ -1127,7 +1185,7 @@ function renderLand(){
     <p class="desc muted">Your ${esc(HULL[G.p.hullId].name)} and fitted outfits trade in for <span class="mono c-amber">${fmt(trade)} cr</span>. Outfits that fit the new hull move across; the rest are sold.</p>
     <div class="grid2">${HULLS.filter(h=>h.tech<=port.tech).map(h=>{
       const cost=h.price-trade,mine=h.id===G.p.hullId,ok=!mine&&G.p.credits>=cost&&cargoUsed()<=h.cargo;
-      return `<div class="card"><div class="row"><h3>${h.name}</h3>${mine?'<span class="chip c-amber">Current</span>':''}</div><p class="desc muted" style="font-size:14px">${h.desc}</p>
+      return `<div class="card"><div class="row"><h3>${h.name}</h3>${mine?'<span class="chip c-amber">Current</span>':''}</div><p class="desc muted" style="font-size:calc(14px * var(--ui))">${h.desc}</p>
       <dl class="kv"><dt>Hull / shield</dt><dd>${h.hull} / ${h.shield}</dd><dt>Speed</dt><dd>${h.speed}</dd><dt>Cargo / fuel</dt><dd>${h.cargo}t / ${h.fuel}</dd><dt>Guns / modules</dt><dd>${h.guns} / ${h.mods}</dd><dt>List price</dt><dd>${fmt(h.price)}</dd></dl>
       <button class="btn ${ok?'primary':''}" data-act="hbuy" data-h="${h.id}" ${ok?'':'disabled'}>${mine?'Owned':cost<=0?`Swap (+${fmt(-cost)} cr)`:`Buy for ${fmt(cost)} cr`}</button></div>`;}).join('')}</div>`;
   }else{
@@ -1139,8 +1197,10 @@ function renderLand(){
       ${av.length?av.map(m=>`<div class="job" data-m="${m.id}"><strong><span class="jtag c-cyan">${J(m.id).tag}</span>${m.type==='contract'?'<span class="chip c-amber">Contract</span> ':''}${esc(m.title)}</strong><span class="pay">${fmt(m.reward)} cr</span><p>${esc(m.desc)} Due day ${m.deadline}.${m.tons?` Needs ${m.tons}t.`:''} ${pairs(J(m.id))}</p><button class="btn sm" data-act="accept" data-m="${m.id}" ${m.tons&&cargoUsed()+m.tons>st.cargo?'disabled':''}>Accept</button></div>`).join(''):'<p class="muted">No work posted today. Check back tomorrow.</p>'}`;
   }
   landEl.innerHTML=`<div class="dock">${head}<div class="tabs" role="tablist">${tabs.map(([id,l])=>`<button class="tab" role="tab" aria-selected="${landTab===id}" data-act="tab" data-t="${id}">${l}</button>`).join('')}</div>
-    <div class="dock-body">${html}</div><div class="dock-foot"><span class="muted" style="font-size:13px">Game saved on landing.</span><button class="btn primary" data-act="takeoff">Take off</button></div></div>`;
+    <div class="dock-body">${html}</div><div class="dock-foot"><span class="muted" style="font-size:calc(13px * var(--ui))">Game saved on landing.</span><button class="btn primary" data-act="takeoff">Take off</button></div></div>`;
   landEl.querySelector('.dock-body').scrollTop=scroll;
+  const tabsEl=landEl.querySelector('.tabs'),sel=tabsEl&&tabsEl.querySelector('[aria-selected="true"]');
+  if(sel&&tabsEl.scrollWidth>tabsEl.clientWidth)tabsEl.scrollLeft=sel.offsetLeft-(tabsEl.clientWidth-sel.offsetWidth)/2;
   if($('jobmap'))drawJobMap();else jobView=null;
 }
 
@@ -1180,11 +1240,11 @@ function drawJobMap(){
     const[x,y]=P(sys[id]),act=js.some(j=>j.active);g.globalAlpha=js.some(lit)?1:.3;
     g.strokeStyle=g.fillStyle=act?'#ffb547':'#62d5ff';g.beginPath();
     if(act)g.rect(x-6,y-6,12,12);else g.arc(x,y,6,0,TAU);g.stroke();
-    g.font='600 12px "IBM Plex Mono",monospace';g.fillText(js.map(j=>j.tag).join(' '),x,y-11);
-    g.font='500 12px "IBM Plex Sans Condensed",sans-serif';g.fillStyle='#e1e7f2';g.fillText(sys[id].name,x,y+20);
+    g.font=`600 ${12*ui}px "IBM Plex Mono",monospace`;g.fillText(js.map(j=>j.tag).join(' '),x,y-11);
+    g.font=`500 ${12*ui}px "IBM Plex Sans Condensed",sans-serif`;g.fillStyle='#e1e7f2';g.fillText(sys[id].name,x,y+20);
   }
   g.globalAlpha=1;const[mx0,my0]=P(me);g.strokeStyle='#ffb547';g.lineWidth=2;g.beginPath();g.arc(mx0,my0,8,0,TAU);g.stroke();
-  g.fillStyle='#ffb547';g.font='500 12px "IBM Plex Sans Condensed",sans-serif';g.fillText('You',mx0,my0+22);
+  g.fillStyle='#ffb547';g.font=`500 ${12*ui}px "IBM Plex Sans Condensed",sans-serif`;g.fillText('You',mx0,my0+22);
 }
 function setJobHL(e){const j=e.target.closest&&e.target.closest('.job[data-m]'),id=j?j.dataset.m:null;if(id!==jobHL){jobHL=id;drawJobMap();}}
 landEl.addEventListener('pointerover',setJobHL);landEl.addEventListener('focusin',setJobHL);
@@ -1243,7 +1303,7 @@ function drawMap(){
     else for(const id of eventSystems(e)){if(!K.known.has(id))continue;const[x,y]=m2s(sys[id].x,sys[id].y);mx.strokeStyle=e.kind==='war'?'rgba(255,98,98,.6)':'#62d5ff';mx.setLineDash([3,3]);mx.beginPath();mx.arc(x,y,17,0,TAU);mx.stroke();mx.setLineDash([]);}
   }
   const targets=new Set(G.missions.map(m=>m.dest));
-  mx.font='500 12px "IBM Plex Sans Condensed",sans-serif';mx.textAlign='center';
+  mx.font=`500 ${12*ui}px "IBM Plex Sans Condensed",sans-serif`;mx.textAlign='center';
   for(const id of K.known){
     const s=sys[id],[x,y]=m2s(s.x,s.y),vis=G.visited.has(id),col=s.faction>=0?G.gal.factions[s.faction].color:'#9aa3b5';
     mx.beginPath();mx.arc(x,y,vis?5:4,0,TAU);
@@ -1264,7 +1324,7 @@ function renderMapInfo(){
   const evs=G.events.filter(e=>live(e)&&G.news.has(e.id)&&eventSystems(e).includes(s.id));
   const ledger=s.ports.map(p=>{const e=G.ledger[`${s.id}.${p.i}`];return e?`<details><summary>${esc(p.name)} · prices from day ${e.day}</summary><div class="ledger">${GOODS.map(g=>`<span>${g.name}</span><span class="num">${fmt(e.p[g.id])}</span>`).join('')}</div></details>`:'';}).join('');
   const jobs=G.missions.filter(m=>m.dest===s.id);
-  el.innerHTML=`<div><div class="eyebrow" style="color:${s.faction>=0&&named?G.gal.factions[s.faction].color:'var(--dim)'}">${named?esc(facName(s)):'Unknown authority'}</div><h3 style="font-size:22px">${named?esc(s.name):'Uncharted system'}</h3></div>
+  el.innerHTML=`<div><div class="eyebrow" style="color:${s.faction>=0&&named?G.gal.factions[s.faction].color:'var(--dim)'}">${named?esc(facName(s)):'Unknown authority'}</div><h3 style="font-size:calc(22px * var(--ui))">${named?esc(s.name):'Uncharted system'}</h3></div>
     <dl class="kv"><dt>Status</dt><dd>${s.id===G.loc?'You are here':vis?'Visited':'Unexplored'}</dd>${vis||K.scan?`<dt>Pirate activity</dt><dd>${danger}</dd>`:''}<dt>Jumps</dt><dd>${d??'No known route'}</dd>${d?`<dt>Fuel needed</dt><dd>${d} of ${G.p.fuel}</dd>`:''}</dl>
     ${vis?`<div><div class="eyebrow">Ports</div>${s.ports.length?s.ports.map(p=>`<div>${esc(p.name)} <span class="muted">· ${esc(p.kind)}, tech ${p.tech}${p.shipyard?', shipyard':''}</span></div>`).join(''):'<div class="muted">None. Empty system.</div>'}</div>`:''}
     ${evs.length?`<div><div class="eyebrow">News</div>${evs.map(e=>`<div class="${e.kind==='market'?'c-cyan':'c-bad'}">${esc(e.title)}</div>`).join('')}</div>`:''}
