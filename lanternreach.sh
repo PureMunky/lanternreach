@@ -20,6 +20,7 @@ EOF
 {
   printf '%s\n' '<!doctype html><html lang="en"><head><meta charset="utf-8">' \
     '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' \
+    '<meta name="theme-color" content="#060911"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Lanternreach"><link rel="manifest" href="manifest.webmanifest">' \
     '<link rel="stylesheet" href="fonts/fonts.css"><style>[hidden]{display:none!important}</style></head><body>'
   cat "$DIR/lanternreach.html"
   printf '%s\n' '</body></html>'

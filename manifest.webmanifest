@@ -1,0 +1,12 @@
+{
+  "name": "Lanternreach",
+  "short_name": "Lanternreach",
+  "description": "Trade, fight and explore across a generated galaxy of sixty star systems.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#060911",
+  "theme_color": "#060911",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
