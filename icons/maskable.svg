@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Android maskable icon: everything that matters sits inside the central 80% safe zone. -->
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="45%" r="75%">
+      <stop offset="0" stop-color="#121b30"/>
+      <stop offset="1" stop-color="#060911"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffb547" stop-opacity=".6"/>
+      <stop offset=".55" stop-color="#ffb547" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#ffb547" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#sky)"/>
+  <circle cx="256" cy="256" r="200" fill="url(#glow)"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#ffb547" stroke-opacity=".28" stroke-width="4" stroke-dasharray="18 16"/>
+  <g transform="translate(260 253) rotate(-35) scale(1.75)">
+    <path d="M-28 0 L-84 -15 L-84 15 Z" fill="#ffc46b" opacity=".95"/>
+    <path d="M72 0 L12 -18 L-12 -56 L-46 -56 L-34 0 L-46 56 L-12 56 L12 18 Z" fill="#151d2e" stroke="#ffb547" stroke-width="6" stroke-linejoin="round"/>
+    <circle cx="22" cy="0" r="9" fill="#ffe2a8"/>
+  </g>
+</svg>
