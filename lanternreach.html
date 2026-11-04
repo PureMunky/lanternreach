@@ -176,6 +176,13 @@ body[data-mode="space"][data-input="touch"] #toast{top:calc(max(8px,env(safe-are
 body:not([data-mode="space"]) #comms{display:none}
 @media (max-width:480px){#comms .choices{flex-direction:column}}
 #touch .pad.r .wing{grid-column:1/3;height:40px;font-size:12px;color:var(--green);border-color:var(--green)}
+/* Faction ladder, fleet and warehouse */
+.sel{background:var(--void);border:1px solid var(--line-hi);color:var(--ink);font:inherit;font-size:calc(14px * var(--ui));padding:6px 8px;max-width:100%;min-width:0}
+body[data-input="touch"] .sel{min-height:40px}
+.ladder{display:grid;grid-template-columns:auto auto 1fr;gap:4px 12px;font-size:calc(13px * var(--ui));align-items:baseline}
+.ladder .on{color:var(--green)}.ladder .off{color:var(--dim)}
+.fr{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-top:1px solid rgba(36,49,80,.5)}
+.fr .routes{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 /* Daily scorecard */
 .score-total{font-family:var(--f-display);font-size:calc(44px * var(--ui));font-weight:700;color:var(--amber);line-height:1}
 .share-text{margin:0;padding:10px 12px;border:1px solid var(--line);background:var(--void);white-space:pre-wrap;font-size:calc(13px * var(--ui))}
@@ -394,6 +401,11 @@ const HULLS=[
   {id:'warden',name:'Warden Gunship',price:185000,tech:4,hull:380,shield:320,speed:225,accel:170,turn:2.6,cargo:30,fuel:5,guns:5,mods:5,size:23,desc:'Heavy guns, heavy armour. It makes pirates reconsider.'},
   {id:'bastion',name:'Bastion Cruiser',price:440000,tech:5,hull:820,shield:620,speed:185,accel:120,turn:1.8,cargo:85,fuel:6,guns:7,mods:7,size:34,desc:'A private cruiser. You will be the largest thing in most systems.'},
   // never sold (tech 9): the Relay Gate's reward
+  // faction hulls (tech 9): sold only at the issuing faction's shipyards to its Commanders
+  {id:'vanguard',fac:0,name:'Vanguard Corvette',price:120000,tech:9,hull:240,shield:240,speed:290,accel:255,turn:3.6,cargo:24,fuel:5,guns:4,mods:5,size:15,desc:'A Kestrel rebuilt to faction spec. Faster, tougher, one more gun.'},
+  {id:'bulwark',fac:1,name:'Bulwark Freighter',price:95000,tech:9,hull:340,shield:160,speed:195,accel:125,turn:2.2,cargo:95,fuel:6,guns:3,mods:4,size:21,desc:'An armoured hauler for convoy work. Holds more than an Ox and takes a beating.'},
+  {id:'farseer',fac:2,name:'Farseer Explorer',price:130000,tech:9,hull:200,shield:220,speed:285,accel:220,turn:3.2,cargo:36,fuel:12,guns:3,mods:6,size:16,desc:'Long-range survey hull with tanks for twelve jumps.'},
+  {id:'sentinel',fac:3,name:'Sentinel Gunship',price:230000,tech:9,hull:460,shield:400,speed:235,accel:180,turn:2.7,cargo:32,fuel:5,guns:6,mods:6,size:24,desc:'A line warship lent to the faction\'s most trusted pilots.'},
   {id:'wayfarer',name:'Lantern Wayfarer',price:160000,tech:9,hull:300,shield:300,speed:300,accel:240,turn:3.4,cargo:40,fuel:12,guns:4,mods:6,size:17,desc:'Built by the lamplighters for the long dark. Fast, tough and almost tireless.'}];
 const HULL=Object.fromEntries(HULLS.map(h=>[h.id,h]));
 const SHAPES={
@@ -404,6 +416,10 @@ const SHAPES={
   pathfinder:[[1.25,0],[.4,.3],[-.3,.36],[-.9,.72],[-.8,0],[-.9,-.72],[-.3,-.36],[.4,-.3]],
   warden:[[1.1,0],[.6,.42],[-.2,.5],[-.9,.92],[-1,0],[-.9,-.92],[-.2,-.5],[.6,-.42]],
   bastion:[[1.2,0],[.8,.35],[0,.46],[-.6,.72],[-1.1,.5],[-1.1,-.5],[-.6,-.72],[0,-.46],[.8,-.35]],
+  vanguard:[[1.2,0],[.2,.25],[-.2,.82],[-.7,.82],[-.5,0],[-.7,-.82],[-.2,-.82],[.2,-.25]],
+  bulwark:[[1,-.32],[1,.32],[-.9,.58],[-.9,-.58]],
+  farseer:[[1.25,0],[.4,.3],[-.3,.36],[-.9,.72],[-.8,0],[-.9,-.72],[-.3,-.36],[.4,-.3]],
+  sentinel:[[1.1,0],[.6,.42],[-.2,.5],[-.9,.92],[-1,0],[-.9,-.92],[-.2,-.5],[.6,-.42]],
   wayfarer:[[1.3,0],[.5,.28],[-.1,.3],[-.5,.75],[-.95,.6],[-.75,0],[-.95,-.6],[-.5,-.75],[-.1,-.3],[.5,-.28]]};
 const OUTFITS=[
   {id:'mining',name:'Mining Laser',type:'gun',price:5000,tech:1,dmg:3,rockMul:8,rate:.25,speed:700,life:.6,color:'#9fe0b0',desc:'Cuts rock three times faster than a Pulse Laser; barely scratches ships.'},
@@ -420,6 +436,11 @@ const OUTFITS=[
   {id:'scanner',name:'Deep Scanner',type:'mod',price:13000,tech:3,scan:1,desc:'Charts systems two jumps out from anywhere you know.'},
   {id:'regen',name:'Shield Regenerator',type:'mod',price:17000,tech:4,regen:5,desc:'+5 shield per second.'},
   // never sold (tech 9): taken from a defeated nemesis
+  // faction gear (tech 9): sold only at the issuing faction's outfitters to its Agents
+  {id:'fac0',fac:0,name:'Lattice Shield',type:'mod',price:24000,tech:9,shield:120,regen:2,desc:'+120 shield and +2 regeneration from one bay.'},
+  {id:'fac1',fac:1,name:'Hull Weave',type:'mod',price:22000,tech:9,hull:130,desc:'+130 hull from one bay.'},
+  {id:'fac2',fac:2,name:'Ghost Drive',type:'mod',price:26000,tech:9,speed:55,accel:70,desc:'+55 top speed, +70 acceleration.'},
+  {id:'fac3',fac:3,name:'Lance Cannon',type:'gun',price:30000,tech:9,dmg:20,rate:.34,speed:1000,life:.7,color:'#c99cff',desc:'Long, hard-hitting bolts at range.'},
   {id:'relaydrive',name:'Relay Drive',type:'relic',price:40000,tech:9,relay:1,desc:'Each jump along a plotted route carries you two systems for one fuel. Needs no module bay.'},
   {id:'fang',name:'Corsair Fang',type:'gun',price:30000,tech:9,dmg:15,rate:.2,speed:950,life:.7,color:'#ff3d6e',desc:'Taken from your nemesis. Fast, hard-hitting, one of a kind.'}];
 const OUT=Object.fromEntries(OUTFITS.map(o=>[o.id,o]));
@@ -551,18 +572,20 @@ function computeStats(hullId,outfits){
 }
 function slotsUsed(outfits){let g=0,m=0;for(const id of outfits){const t=OUT[id].type;if(t==='gun'||t==='rack')g++;else if(t==='mod')m++;}return{g,m};}
 function price(port,gid,day=G.day){const g=GOODS.find(x=>x.id===gid);return Math.max(5,Math.round(g.base*KIND_MOD[port.kind][gid]*port.noise[gid]*(1+.14*Math.sin(day*.37+port.phase[gid]))*eventMul(port.sys,gid)*(banned(G.gal.systems[port.sys].faction,gid)?1.6:1)));}
-const netWorth=()=>G.p.credits+tradeIn()+Object.entries(G.p.cargo).reduce((a,[g,n])=>a+n*GOODS.find(x=>x.id===g).base,0);
+const goodsVal=c=>Object.entries(c).reduce((a,[g,n])=>a+n*GOODS.find(x=>x.id===g).base,0);
+const netWorth=()=>G.p.credits+tradeIn()+goodsVal(G.p.cargo)+Object.values(G.warehouses||{}).reduce((a,w)=>a+goodsVal(w.cargo),0)+(G.fleet||[]).length*FR_PRICE/2;
 
 function newGame(seed){
   const gal=genGalaxy(seed);
   G={gal,seed,day:0,loc:gal.home,port:gal.homePort,p:{hullId:'skiff',outfits:['laser'],ammo:0,credits:9000,fuel:3,hull:70,cargo:{}},
     visited:new Set([gal.home]),charted:new Set(),collected:new Set(),surveyVal:0,missions:[],done:new Set(),rep:Object.fromEntries(gal.factions.map(f=>[f.id,0])),
     stats:{kills:0,jumps:0,boarded:0,jobs:0,bounties:0,rescued:0},route:[],msgs:[],ledger:{},log:[],events:[],news:new Set(),suppress:{},
-    daily:null,miles:[],flags:{},crew:null,crewOrder:'attack',nemesis:null,relay:{found:[],gate:false,claimed:false}};
+    daily:null,miles:[],flags:{},crew:null,crewOrder:'attack',nemesis:null,relay:{found:[],gate:false,claimed:false},
+    enlisted:null,warehouses:{},fleet:[],fleetPending:{cr:0,lines:[]},rankSeen:{}};
   G.nemesis=makeNemesis();
   const s=gal.systems[gal.home];logEv(`Took out a charter at ${s.ports[gal.homePort].name}, ${s.name}.`);
 }
-function serialize(){return{v:2,relay:G.relay,daily:G.daily,miles:G.miles,flags:G.flags,crew:G.crew,crewOrder:G.crewOrder,nemesis:G.nemesis,seed:G.seed,day:G.day,loc:G.loc,port:G.port,p:G.p,visited:[...G.visited],charted:[...G.charted],collected:[...G.collected],surveyVal:G.surveyVal,missions:G.missions,done:[...G.done],rep:G.rep,stats:G.stats,route:G.route,
+function serialize(){return{v:2,relay:G.relay,enlisted:G.enlisted,warehouses:G.warehouses,fleet:G.fleet,fleetPending:G.fleetPending,rankSeen:G.rankSeen,daily:G.daily,miles:G.miles,flags:G.flags,crew:G.crew,crewOrder:G.crewOrder,nemesis:G.nemesis,seed:G.seed,day:G.day,loc:G.loc,port:G.port,p:G.p,visited:[...G.visited],charted:[...G.charted],collected:[...G.collected],surveyVal:G.surveyVal,missions:G.missions,done:[...G.done],rep:G.rep,stats:G.stats,route:G.route,
   ledger:G.ledger,log:G.log,events:G.events,news:[...G.news].filter(id=>G.events.some(e=>e.id===id)),suppress:G.suppress};}
 function restore(d){
   const gal=genGalaxy(d.seed);
@@ -572,6 +595,7 @@ function restore(d){
     daily:d.daily||null,miles:d.miles||[],flags:d.flags||{},crew:d.crew||null,crewOrder:d.crewOrder||'attack',nemesis:d.nemesis||null};
   if(!G.nemesis)G.nemesis=makeNemesis();
   G.relay=d.relay||{found:[],gate:false,claimed:false};if(G.relay.gate)addGate(G.gal);
+  Object.assign(G,{enlisted:d.enlisted||null,warehouses:d.warehouses||{},fleet:d.fleet||[],fleetPending:d.fleetPending||{cr:0,lines:[]},rankSeen:d.rankSeen||{}});
 }
 function save(){lastSave=JSON.stringify(serialize());try{localStorage.setItem(SAVE_KEY,lastSave);}catch(e){}}
 function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
@@ -728,11 +752,15 @@ const MILESTONES=[
   {id:'nemesis',name:'Settled the score',desc:'Defeat your nemesis',test:()=>!!G.nemesis?.defeated},
   {id:'relay',name:'Lamplighter',desc:'Claim the Relay Gate',test:()=>!!G.relay?.claimed},
   {id:'miner',name:'Rock hound',desc:'Mine 20t from asteroids',test:()=>(G.stats.mined||0)>=20},
-  {id:'storm',name:'Storm rider',desc:'Fly through an ion storm',test:()=>!!G.flags.storm}];
+  {id:'storm',name:'Storm rider',desc:'Fly through an ion storm',test:()=>!!G.flags.storm},
+  {id:'champion',name:'Champion',desc:'Reach Champion rank with a faction',test:()=>G.gal.factions.some(f=>facRank(f.id)>=4)},
+  {id:'served',name:'Served with honour',desc:'See a war through as an enlisted pilot',test:()=>!!G.flags.warServed},
+  {id:'stockpile',name:'Stockpile',desc:'Own a warehouse',test:()=>Object.keys(G.warehouses||{}).length>0},
+  {id:'fleet3',name:'Shipping line',desc:'Run three freighters',test:()=>(G.fleet||[]).length>=3}];
 const MILES_KEY='lanternreach-miles';
 function lifetimeMiles(){try{return new Set(JSON.parse(localStorage.getItem(MILES_KEY)||'[]'));}catch(e){return new Set();}}
 function checkMilestones(){
-  if(!G)return;
+  if(!G)return;checkRanks();
   for(const m of MILESTONES){
     if(G.miles.includes(m.id)||!m.test())continue;
     G.miles.push(m.id);logEv(`Milestone: ${m.name}.`);play('good');buzz([20,40,20]);
@@ -879,6 +907,7 @@ function availableMissions(sys,port){
     if(!G.done.has(id)&&!G.missions.some(x=>x.id===id))out.push(m);
   }
   if(sys.faction>=0&&(G.rep[sys.faction]||0)>=CONTRACT_REP){const c=makeContract(sys,port,sys.faction);if(c&&!G.done.has(c.id)&&!G.missions.some(x=>x.id===c.id))out.push(c);}
+  if(G.enlisted&&sys.faction===G.enlisted.side){const w=makeWarJob(sys,port);if(w&&!G.done.has(w.id)&&!G.missions.some(x=>x.id===w.id))out.push(w);}
   return out;
 }
 const bountyDesc=m=>`A pirate captain operating in ${G.gal.systems[m.dest].name}. Destroy their ship.`;
@@ -923,9 +952,72 @@ function payMission(m,why){
   if(m.issuer>=0)G.rep[m.issuer]=Math.min(60,(G.rep[m.issuer]||0)+2);
   msg(`${why||'Job complete'}: +${fmt(m.reward)} cr`,'good');G.stats.jobs=(G.stats.jobs||0)+1;logEv(`${why||'Job complete'}: ${m.title}, +${fmt(m.reward)} cr.`);
 }
+// ---------- faction ranks ----------
+// Standing becomes a ladder: each rank unlocks something real in that faction's space.
+const FRANKS=[[10,'Associate','Contract work'],[25,'Agent','Faction outfit at their outfitters'],[40,'Commander','Faction hull at their shipyards'],[55,'Champion','Half-price fuel, free repairs, no customs searches']];
+function facRank(f){if(f==null||f<0)return 0;const v=G.rep[f]||0;let i=0;FRANKS.forEach((r,k)=>{if(v>=r[0])i=k+1;});return i;}
+const rankName=i=>i?FRANKS[i-1][1]:'';
+const champ=f=>f>=0&&facRank(f)>=4;
+function standingHtml(f){const v=G.rep[f]||0,i=facRank(f);return `${isWanted(f)?'<span class="c-bad">Wanted</span>':v<0?'<span class="c-bad">Suspect</span>':i?`<span class="c-good">${rankName(i)}</span>`:'Clean'} (${v})`;}
+function checkRanks(){
+  for(const F of G.gal.factions){const i=facRank(F.id),was=G.rankSeen[F.id]||0;
+    if(i>was){toast(`Promoted · <b>${rankName(i)}</b> of the ${esc(F.name)}`);logEv(`Promoted to ${rankName(i)} of the ${F.name}.`);play('good');}
+    G.rankSeen[F.id]=i;}
+}
+// ---------- war enlistment ----------
+const warFor=f=>G.events.find(e=>e.kind==='war'&&live(e)&&(e.fa===f||e.fb===f)&&G.news.has(e.id));
+const enemyPatrol=s=>!!G.enlisted&&s.ai&&s.ai.kind==='patrol'&&s.ai.faction===G.enlisted.enemy;
+function settleWar(){
+  const E=G.enlisted;if(!E||G.events.some(e=>e.id===E.war&&live(e)))return;
+  const pay=2000+E.kills*1500,F=G.gal.factions[E.side];G.p.credits+=pay;G.rep[E.side]=Math.min(60,(G.rep[E.side]||0)+5);G.flags.warServed=true;
+  G.missions=G.missions.filter(m=>m.type!=='war');G.enlisted=null;
+  msg(`The war is over. The ${F.name} pays your service: +${fmt(pay)} cr.`,'good');logEv(`Discharged by the ${F.name} after the war: ${plural(E.kills,'enemy kill')}, +${fmt(pay)} cr.`);toast(`War over · <b>+${fmt(pay)} cr</b>`);
+}
+function makeWarJob(sys,port){
+  const E=G.enlisted,e=G.events.find(x=>x.id===E.war);if(!e)return null;
+  const r=rngFor(G.seed,'warjob',sys.id,port.i,G.day),{dist}=bfs(sys.id,allNbr);
+  const c=[...dist].filter(([id,d])=>d>=1&&d<=4&&G.gal.systems[id].faction===E.enemy&&inWar(e,G.gal.systems[id])).map(([id])=>id);if(!c.length)return null;
+  const dest=pick(r,c),d=dist.get(dest),ds=G.gal.systems[dest],en=G.gal.factions[E.enemy].name.split(' ').pop();
+  const m={type:'war',id:`${sys.id}.${port.i}.${G.day}.w`,issuer:E.side,dest,need:3,got:0,en,reward:Math.round((5000+d*1200)/100)*100,deadline:G.day+d+4,title:`Strike ${ds.name}`};
+  m.desc=warDesc(m);return m;
+}
+const warDesc=m=>`Destroy ${m.need} ${m.en} patrols in ${G.gal.systems[m.dest].name}. ${m.got} of ${m.need} so far.`;
+// ---------- the trade empire ----------
+// Freighters run a route between two ports you have price records for, carrying whichever legal
+// good pays best that day. They carry 25t, a broker takes 40% of the margin and the captain is
+// paid daily, so flying a route yourself always pays better per ton.
+const FR_PRICE=45000,FR_WAGE=150,FR_TONS=25,FR_SHARE=.6,WH_PRICE=20000,WH_CAP=100;
+const FR_NAMES=['Steady Hand','Copper Kettle','Late Bloom','Fair Wind','Northern Lass','Quiet Margin'];
+const portByKey=k=>{const[a,b]=k.split('.').map(Number);return G.gal.systems[a]?.ports[b];};
+const portLabel=k=>{const[a]=k.split('.').map(Number),p=portByKey(k);return p?`${p.name}, ${G.gal.systems[a].name}`:k;};
+function fleetTick(){
+  for(const fr of G.fleet){
+    G.fleetPending.cr-=FR_WAGE;
+    const[a,b]=fr.leg?[fr.route[1],fr.route[0]]:fr.route;
+    if(fr.status==='distress'||!a||!b||a===b)continue;
+    const sa=+a.split('.')[0],sb=+b.split('.')[0],{dist,prev}=bfs(sa,allNbr);
+    if(fr.days==null)fr.days=(dist.get(sb)??1)+1;
+    if(--fr.days>0)continue;
+    const pa=portByKey(a),pb=portByKey(b);let best=null;for(const g of LEGAL){const m=price(pb,g.id)-price(pa,g.id);if(!best||m>best.m)best={g,m};}
+    const path=[sa,...(pathTo(prev,sa,sb)||[])],risk=Math.min(.25,path.reduce((x,id)=>x+dangerOf(G.gal.systems[id]),0)/path.length*.3);
+    fr.leg=1-fr.leg;fr.days=null;
+    if(Math.random()<risk){
+      const at=pick(Math.random,path),sys=G.gal.systems[at];fr.status='distress';
+      const m={type:'fleet',id:`fleet.${fr.id}.${G.day}`,fid:fr.id,issuer:-1,dest:at,tons:0,reward:0,deadline:G.day+3,title:`Defend the ${fr.name}`,desc:`Your freighter is under pirate attack in ${sys.name}. Get there by day ${G.day+3} or lose it.`};
+      G.missions.push(m);G.done.add(m.id);chartTo(at);msg(`Distress call: your freighter ${fr.name} is under attack in ${sys.name}!`,'bad');logEv(`${fr.name} under attack in ${sys.name}.`);toast(`<b>${esc(fr.name)}</b> under attack in ${esc(sys.name)}`);
+    }else{const pr=best&&best.m>0?Math.round(best.m*FR_SHARE*FR_TONS):0;G.fleetPending.cr+=pr;fr.earned=(fr.earned||0)+pr;fr.last=pr?`${FR_TONS}t ${best.g.name} to ${pb.name}, +${fmt(pr)} cr`:`ran empty to ${pb.name}`;G.fleetPending.lines.push(`${fr.name}: ${fr.last}`);}
+  }
+}
+function fleetReport(){
+  const P=G.fleetPending;if(!G.fleet.length&&!P.lines.length&&!P.cr)return;
+  if(!P.lines.length&&!P.cr)return;
+  G.p.credits=Math.max(0,G.p.credits+P.cr);logEv(`Fleet report: ${P.cr>=0?'+':''}${fmt(P.cr)} cr after wages${P.lines.length?` (${P.lines.length} run${P.lines.length>1?'s':''})`:''}.`);
+  toast(`Fleet report · <b>${P.cr>=0?'+':''}${fmt(P.cr)} cr</b>`);G.fleetPending={cr:0,lines:[]};
+}
 function checkDeadlines(){
   for(const m of [...G.missions])if(G.day>m.deadline){
     G.missions=G.missions.filter(x=>x!==m);
+    if(m.type==='fleet'){const fr=G.fleet.find(f=>f.id===m.fid);G.fleet=G.fleet.filter(f=>f.id!==m.fid);msg(`No one came. The ${fr?fr.name:'freighter'} was lost to pirates.`,'bad');logEv(`Lost the freighter ${fr?fr.name:''}.`);continue;}
     if(m.issuer>=0)G.rep[m.issuer]=(G.rep[m.issuer]||0)-3;
     msg(`Job failed, deadline passed: ${m.title}`,'bad');logEv(`Failed: ${m.title}.`);
   }
@@ -1008,6 +1100,8 @@ function enterSystem(sysId,from,atPort){
   const em=G.missions.find(m=>m.type==='escort');
   if(em&&em.escort.hull>0){spawnAlly('escort',em);const n=1+(dangerOf(sys)>.4?1:0),k=1+(dangerOf(sys)>.6?1:0);S.waves=[];for(let i=0;i<n;i++)S.waves.push({t:6+Math.random()*6+i*(15+Math.random()*10),n:k});}
   if(G.crew)spawnAlly('wing');
+  const fm=G.missions.find(m=>m.type==='fleet'&&m.dest===sys.id);
+  if(fm){S.fleetRaid=fm.id;const fr=G.fleet.find(f=>f.id===fm.fid);msg(`Raiders are on the ${fr?fr.name:'freighter'}! Drive them off.`,'bad');for(let i=dangerOf(sys)>.5?3:2;i>0;i--){const p=spawnNPC('pirate');p.willHail=false;p.fleetRaid=fm.id;p.ai.tgt=me;}}
   const N=G.nemesis;
   if(from!=null&&N&&!N.defeated&&!sys.gate&&G.day>=N.nextDay&&dangerOf(sys)>.25){const s=spawnNPC('pirate',{nemesis:true});s.ai.tgt=me;N.met=true;N.lastSys=sys.id;N.nextDay=G.day+rint(Math.random,4,8);S.tauntT=2.5;msg(`${N.name} is in the system.`,'bad');}
   // rescue pods: sometimes an escape pod is adrift when you arrive
@@ -1058,7 +1152,7 @@ function spawnNPC(kind,o={}){
   S.ships.push(s);return s;
 }
 const ships=()=>S.me.dead||S.jump?S.ships:[...S.ships,S.me];
-function hostileToPlayer(s){if(s.dead||s.disabled||s.spared||s.ally)return false;const k=s.ai.kind;return k==='pirate'||s.hostile||(k==='patrol'&&isWanted(s.ai.faction));}
+function hostileToPlayer(s){if(s.dead||s.disabled||s.spared||s.ally)return false;const k=s.ai.kind;return k==='pirate'||s.hostile||(k==='patrol'&&(isWanted(s.ai.faction)||enemyPatrol(s)));}
 function wantsToAttack(a,b){if(b.player)return hostileToPlayer(a);if(a.ai.kind==='pirate')return b.ai.kind!=='pirate'&&!b.disabled;if(a.ai.kind==='patrol')return b.ai.kind==='pirate';return false;}
 function chooseTarget(s){let best=null,bd=1700;for(const o of ships()){if(o===s||o.dead||!wantsToAttack(s,o))continue;let d=Math.hypot(o.x-s.x,o.y-s.y);if(o.player)d*=.7;if(d<bd){bd=d;best=o;}}return best;}
 function steer(s,want,dt){const d=angDiff(s.a,want),m=s.st.turn*dt;s.a+=clamp(d,-m,m);return Math.abs(d);}
@@ -1094,7 +1188,7 @@ function burst(x,y,color,n,sp){for(let i=0;i<n&&S.parts.length<900;i++){const a=
 function explode(s){play('explode',s.x,s.y,s.size/15);burst(s.x,s.y,'#ffcf7a',30+s.size*2,140+s.size*8);burst(s.x,s.y,'#ff6a3a',20+s.size,90+s.size*5);S.parts.push({ring:true,x:s.x,y:s.y,life:.5,max:.5,r:s.size*5});if(!reduceMotion)S.shake=Math.min(14,S.shake+s.size*.4);}
 function provoke(s){
   if(s.hostile)return;s.hostile=true;
-  if(s.ai.kind!=='pirate'&&S.sys.faction>=0){const f=S.sys.faction,was=isWanted(f);G.rep[f]-=4;if(!was&&isWanted(f))msg(`You are now wanted by the ${G.gal.factions[f].name}.`,'bad');}
+  if(s.ai.kind!=='pirate'&&!enemyPatrol(s)&&S.sys.faction>=0){const f=S.sys.faction,was=isWanted(f);G.rep[f]-=4;if(!was&&isWanted(f))msg(`You are now wanted by the ${G.gal.factions[f].name}.`,'bad');}
 }
 // ---------- comms ----------
 // A hail opens a small dialog of choices. The game runs at 20% speed while it is open.
@@ -1167,6 +1261,8 @@ function destroy(s,shooter){
     G.stats.kills++;const f=S.sys.faction;
     if(s.ai.kind==='pirate'){const sid=S.sys.id;G.suppress[sid]={v:Math.min(.45,suppressed(S.sys)+.08),until:G.day+6};
       const b=Math.round((300+HULL[s.hullId].price*.05)/10)*10;G.p.credits+=b;if(f>=0)G.rep[f]=Math.min(60,(G.rep[f]||0)+2);msg(`Pirate destroyed. Bounty paid: ${fmt(b)} cr`,'good');}
+    else if(enemyPatrol(s)){const E=G.enlisted;E.kills++;G.rep[E.side]=Math.min(60,(G.rep[E.side]||0)+3);msg(`${s.name} destroyed. +3 standing with the ${G.gal.factions[E.side].name}.`,'good');
+      for(const m of [...G.missions])if(m.type==='war'&&m.dest===S.sys.id){m.got++;m.desc=warDesc(m);if(m.got>=m.need)payMission(m,'War job complete');}}
     else if(f>=0){const was=isWanted(f);G.rep[f]-=s.ai.kind==='patrol'?20:10;msg(`${s.name} destroyed. The ${G.gal.factions[f].name} will remember that.`,'bad');if(!was&&isWanted(f))msg(`You are now wanted by the ${G.gal.factions[f].name}.`,'bad');}
   }
 }
@@ -1350,13 +1446,15 @@ function update(dt){
   for(const s of S.ships){s.thrusting=false;aiUpdate(s,dt);physics(s,dt);}
   // the first friendly patrol to come close scans your hold
   if(!S.scanned&&!me.dead&&S.sys.faction>=0)for(const s of S.ships)if(s.ai.kind==='patrol'&&!s.hostile&&!s.disabled&&Math.hypot(s.x-me.x,s.y-me.y)<320){
-    S.scanned=true;if(contraHeld(S.sys.faction).length&&Math.random()<G.gal.factions[S.sys.faction].law*.6){if(S.comms)inspect(S.sys.faction,`${s.name} scan`);else patrolHail(s);}break;}
+    S.scanned=true;if(!champ(S.sys.faction)&&contraHeld(S.sys.faction).length&&Math.random()<G.gal.factions[S.sys.faction].law*.6){if(S.comms)inspect(S.sys.faction,`${s.name} scan`);else patrolHail(s);}break;}
   // keep allies' damage in the save; close a hail whose ship is gone
   for(const s of S.ships){if(s.dead)continue;if(s.escortId){const m=G.missions.find(x=>x.id===s.escortId);if(m)m.escort.hull=s.hull;}if(s.crew&&G.crew)G.crew.hull=s.hull;}
   if(S.comms&&S.comms.ship&&(S.comms.ship.dead||S.comms.ship.disabled))closeComms();
   // escort jobs draw pirate waves at the hauler
   if(S.waves)for(const w of S.waves)if(!w.done&&(w.t-=dt)<=0){w.done=true;const e=escortShip();
     if(e){msg(`Pirates closing on the ${e.name}!`,'bad');for(let i=0;i<w.n;i++){const p=spawnNPC('pirate');p.ai.tgt=e;p.willHail=false;}}}
+  if(S.fleetRaid&&!S.ships.some(s=>s.fleetRaid===S.fleetRaid&&!s.dead)){const m=G.missions.find(x=>x.id===S.fleetRaid);S.fleetRaid=null;
+    if(m){G.missions=G.missions.filter(x=>x!==m);const fr=G.fleet.find(f=>f.id===m.fid);if(fr)fr.status='ok';msg(`Raiders driven off. The ${fr?fr.name:'freighter'} is back on its route.`,'good');logEv(`Saved the freighter ${fr?fr.name:''} in ${S.sys.name}.`);}}
   if(S.tauntT!=null&&(S.tauntT-=dt)<=0){S.tauntT=null;if(!S.comms&&S.ships.some(s=>s.nemesis&&!s.dead))nemesisTaunt();}
   S.ships=S.ships.filter(s=>!s.dead);
   if(S.target&&S.target.dead)S.target=null;
@@ -1472,7 +1570,8 @@ function landAt(p){
   for(const m of [...G.missions])if(m.type==='escort'&&m.dest===sys.id&&m.destPort===p.i&&m.escort.hull>0){G.stats.escorts=(G.stats.escorts||0)+1;payMission(m,'Escort complete');}
   closeComms();
   for(const m of [...G.missions])if(m.type==='rescue'){G.stats.rescued=(G.stats.rescued||0)+1;payMission(m,'Survivor delivered');}
-  if(sys.faction>=0&&!isWanted(sys.faction)&&Math.random()<G.gal.factions[sys.faction].law*.4)inspect(sys.faction,'Customs');
+  if(sys.faction>=0&&!isWanted(sys.faction)&&!champ(sys.faction)&&Math.random()<G.gal.factions[sys.faction].law*.4)inspect(sys.faction,'Customs');
+  settleWar();fleetReport();
   learnNews();
   if(!isWanted(sys.faction))save();
   landTab='port';openLand();checkMilestones();
@@ -1508,7 +1607,7 @@ function doJump(){
   const nx=G.route[0];
   if(stats().relay&&nx!=null&&G.gal.systems[to].links.includes(nx)&&!blockOf(to,nx)&&jumpCost(to,nx)===1&&jumpCost(from,to)===1){G.charted.add(to);from=to;to=nx;G.route.shift();msg(`Relay Drive: straight through ${G.gal.systems[from].name}.`,'good');}
   if(G.crew){if(G.p.credits>=G.crew.wage)G.p.credits-=G.crew.wage;else{msg(`${G.crew.name} quits: you can't cover the wage.`,'bad');logEv(`${G.crew.name} quit over unpaid wages.`);G.crew=null;}}
-  rollEvents(to);enterSystem(to,from);checkDeadlines();save();play('arrive');
+  rollEvents(to);fleetTick();settleWar();enterSystem(to,from);checkDeadlines();save();play('arrive');
   if(!G.route.length)msg(`Arrived at ${curSys().name}. Route complete.`);
   else if(chain)S.auto={kind:'jump'};
 }
@@ -1936,19 +2035,21 @@ function renderLand(){
       <div class="dock-foot"><button class="btn primary" data-act="fine" data-n="${fine}" ${G.p.credits<fine?'disabled':''}>Pay fine</button><button class="btn" data-act="takeoff">Take off</button></div></div>`;
     return;
   }
-  const tabs=[['port','Port'],['trade','Trade'],...(port.outfitter?[['outfit','Outfitter']]:[]),...(port.shipyard?[['ship','Shipyard']]:[]),['jobs','Jobs']];
+  const whKey=`${sys.id}.${port.i}`,wh=G.warehouses[whKey];
+  const tabs=[['port','Port'],['trade','Trade'],...(wh?[['store','Warehouse']]:[]),...(port.outfitter?[['outfit','Outfitter']]:[]),...(port.shipyard?[['ship','Shipyard']]:[]),['jobs','Jobs']];
   if(!tabs.some(t=>t[0]===landTab))landTab='port';
   let html='';
   if(landTab==='port'){
-    const fuelCost=(st.fuel-G.p.fuel)*120,dmg=Math.max(0,st.hull-G.p.hull),cdmg=G.crew?Math.max(0,computeStats(G.crew.hullId,G.crew.outfits).hull-G.crew.hull):0,repCost=Math.round((dmg+cdmg)*9);
+    const fuelCost=(st.fuel-G.p.fuel)*(champ(f)?60:120),dmg=Math.max(0,st.hull-G.p.hull),cdmg=G.crew?Math.max(0,computeStats(G.crew.hullId,G.crew.outfits).hull-G.crew.hull):0,repCost=champ(f)?0:Math.round((dmg+cdmg)*9);
     const news=G.events.filter(e=>live(e)&&G.news.has(e.id));
-    const repTxt=f>=0?`${G.rep[f]>=10?'<span class="c-good">Respected</span>':G.rep[f]<0?'<span class="c-bad">Suspect</span>':'Clean'} (${G.rep[f]})`:'No authority here';
+    const repTxt=f>=0?standingHtml(f):'No authority here';
     html=`<p class="desc">${esc(port.desc)}</p>
     ${hints&&G.day===0&&G.stats.jumps===0?`<div class="card" style="border-color:var(--amber)"><h3 class="c-amber">First flight</h3><p class="desc muted">Check the Trade tab for cheap goods, or take a delivery from Jobs. ${touchUI()?'Once in space, tap MAP to plot a route, fly outside the dashed ring, and tap JUMP. Tapping a port flies you in to land.':'Open the map (M) once in space to plot a route, fly outside the dashed ring, and press J.'} Exploring new systems earns survey data you can sell at any port.</p></div>`:''}
     <div class="grid2">
       <div class="card"><h3>Services</h3>
-        <div class="row"><span>Refuel to ${st.fuel} jumps</span><button class="btn sm" data-act="refuel" ${fuelCost===0||G.p.credits<fuelCost?'disabled':''}>${fuelCost?fmt(fuelCost)+' cr':'Full'}</button></div>
-        <div class="row"><span>Repair hull${cdmg>=1?' and wingman':''}${dmg+cdmg>=1?` (${Math.round(dmg+cdmg)} damage)`:''}</span><button class="btn sm" data-act="repair" ${dmg+cdmg<1||G.p.credits<repCost?'disabled':''}>${dmg+cdmg>=1?fmt(repCost)+' cr':'Sound'}</button></div>
+        <div class="row"><span>Refuel to ${st.fuel} jumps${champ(f)?' <span class="muted">· half price</span>':''}</span><button class="btn sm" data-act="refuel" ${fuelCost===0||G.p.credits<fuelCost?'disabled':''}>${fuelCost?fmt(fuelCost)+' cr':'Full'}</button></div>
+        <div class="row"><span>Repair hull${cdmg>=1?' and wingman':''}${dmg+cdmg>=1?` (${Math.round(dmg+cdmg)} damage)`:''}</span><button class="btn sm" data-act="repair" ${dmg+cdmg<1||G.p.credits<repCost?'disabled':''}>${dmg+cdmg>=1?(repCost?fmt(repCost)+' cr':'Free'):'Sound'}</button></div>
+        <div class="row"><span>${wh?`Warehouse here · ${Object.values(wh.cargo).reduce((a,b)=>a+b,0)}/${WH_CAP}t stored`:`Buy a warehouse here (${WH_CAP}t)`}</span>${wh?'<button class="btn sm" data-act="tab" data-t="store">Open</button>':`<button class="btn sm" data-act="wbuy" ${G.p.credits<WH_PRICE?'disabled':''}>${fmt(WH_PRICE)} cr</button>`}</div>
         <div class="row"><span>Sell survey data</span><button class="btn sm" data-act="survey" ${G.surveyVal?'':'disabled'}>${G.surveyVal?fmt(G.surveyVal)+' cr':'None'}</button></div>
       </div>
       <div class="card"><h3>Pilot record</h3><dl class="kv">
@@ -1957,6 +2058,7 @@ function renderLand(){
         <dt>Systems charted</dt><dd>${G.visited.size} / ${sysCount()}</dd><dt>Standing</dt><dd>${repTxt}</dd><dt>Authority</dt><dd style="color:${facColor(sys)}">${esc(facName(sys))}</dd></dl></div>
     </div>
     ${crewHtml(sys,port)}
+    <div class="grid2">${factionHtml(sys,port)}${fleetHtml()}</div>
     <div class="grid2">
       <div class="card"><h3>Station news</h3>${nemesisNews()}${news.length?news.map(e=>`<div><strong>${esc(e.title)}</strong><p class="desc muted" style="font-size:calc(14px * var(--ui));margin:2px 0 8px">${esc(e.desc)} Expected to last until about day ${e.end}.</p></div>`).join(''):G.nemesis?.met&&!G.nemesis.defeated?'':'<p class="muted">Nothing worth repeating.</p>'}</div>
       <div class="card"><h3>Captain's log</h3><div class="log">${logHtml(7)}</div></div>
@@ -1973,23 +2075,31 @@ function renderLand(){
       return `<tr><td>${g.name}</td><td class="r num">${fmt(p)}</td><td>${tag}</td><td class="r seen" data-l="Best sale seen">${seen}</td><td class="r num" data-l="In hold">${have||'—'}</td><td><div class="acts">
         <button class="btn sm" data-act="buy" data-g="${g.id}" data-n="1" ${canBuy<1?'disabled':''}>Buy 1</button><button class="btn sm" data-act="buy" data-g="${g.id}" data-n="${canBuy}" ${canBuy<1?'disabled':''}>Max</button>
         <button class="btn sm" data-act="sell" data-g="${g.id}" data-n="1" ${have<1?'disabled':''}>Sell 1</button><button class="btn sm" data-act="sell" data-g="${g.id}" data-n="${have}" ${have<1?'disabled':''}>All</button></div></td></tr>`;}).join('')}</tbody></table></div>`;
+  }else if(landTab==='store'){
+    const free=st.cargo-cargoUsed(),used=Object.values(wh.cargo).reduce((a,b)=>a+b,0),room=WH_CAP-used;
+    html=`<div class="row"><span class="muted">Stored ${used}/${WH_CAP}t here. Goods wait safely until you come back for them.</span><span class="mono">Free hold: ${free}t</span></div>
+    <div class="scroll-x"><table class="cards outfit"><thead><tr><th>Commodity</th><th class="r">In hold</th><th class="r">Stored</th><th class="r"></th></tr></thead><tbody>${GOODS.filter(g=>(G.p.cargo[g.id]||0)+(wh.cargo[g.id]||0)>0).map(g=>{
+      const h=G.p.cargo[g.id]||0,w=wh.cargo[g.id]||0,put=Math.min(h,room),take=Math.min(w,free);
+      return `<tr><td>${g.name}</td><td class="r num" data-l="In hold">${h||'—'}</td><td class="r num" data-l="Stored">${w||'—'}</td><td><div class="acts">
+        <button class="btn sm" data-act="wput" data-g="${g.id}" data-n="1" ${put<1?'disabled':''}>Store 1</button><button class="btn sm" data-act="wput" data-g="${g.id}" data-n="${put}" ${put<1?'disabled':''}>Store all</button>
+        <button class="btn sm" data-act="wtake" data-g="${g.id}" data-n="1" ${take<1?'disabled':''}>Take 1</button><button class="btn sm" data-act="wtake" data-g="${g.id}" data-n="${take}" ${take<1?'disabled':''}>Take all</button></div></td></tr>`;}).join('')||'<tr><td colspan="4" class="muted">Nothing in your hold or in storage.</td></tr>'}</tbody></table></div>`;
   }else if(landTab==='outfit'){
     const h=HULL[G.p.hullId],u=slotsUsed(G.p.outfits);
     html=`<div class="row"><span class="muted">Gun mounts ${u.g}/${h.guns} · Module bays ${u.m}/${h.mods}${st.racks?` · Missiles ${G.p.ammo}/${st.racks*10}`:''}</span><span class="muted">Sells back at 60%</span></div>
-    <div class="scroll-x"><table class="cards outfit"><thead><tr><th>Outfit</th><th>Effect</th><th class="r">Price</th><th class="r">Fitted</th><th class="r"></th></tr></thead><tbody>${OUTFITS.filter(o=>o.tech<=port.tech).map(o=>{
+    <div class="scroll-x"><table class="cards outfit"><thead><tr><th>Outfit</th><th>Effect</th><th class="r">Price</th><th class="r">Fitted</th><th class="r"></th></tr></thead><tbody>${OUTFITS.filter(o=>o.tech<=port.tech||o.fac!=null&&o.fac===f&&facRank(f)>=2).map(o=>{
       const n=o.type==='ammo'?G.p.ammo:G.p.outfits.filter(x=>x===o.id).length;
       let can=G.p.credits>=o.price;
       if(o.type==='gun'||o.type==='rack')can&&=u.g<h.guns;else if(o.type==='mod')can&&=u.m<h.mods;else if(o.type==='ammo')can&&=st.racks>0&&G.p.ammo+5<=st.racks*10;
       const canSell=o.type!=='ammo'&&n>0&&!(o.type==='mod'&&o.cargo&&cargoUsed()>st.cargo-o.cargo);
-      return `<tr><td>${o.name}</td><td class="muted" style="min-width:200px">${o.desc}</td><td class="r num">${fmt(o.price)}</td><td class="r num" data-l="Fitted">${n||'—'}</td><td><div class="acts"><button class="btn sm" data-act="obuy" data-o="${o.id}" ${can?'':'disabled'}>Buy</button>${o.type==='ammo'?'':`<button class="btn sm" data-act="osell" data-o="${o.id}" ${canSell?'':'disabled'}>Sell</button>`}</div></td></tr>`;}).join('')}</tbody></table></div>`;
+      return `<tr><td>${o.name}${o.fac!=null?` <span class="chip c-cyan">${esc(G.gal.factions[o.fac].name.split(' ').pop())}</span>`:''}</td><td class="muted" style="min-width:200px">${o.desc}</td><td class="r num">${fmt(o.price)}</td><td class="r num" data-l="Fitted">${n||'—'}</td><td><div class="acts"><button class="btn sm" data-act="obuy" data-o="${o.id}" ${can?'':'disabled'}>Buy</button>${o.type==='ammo'?'':`<button class="btn sm" data-act="osell" data-o="${o.id}" ${canSell?'':'disabled'}>Sell</button>`}</div></td></tr>`;}).join('')}</tbody></table></div>`;
   }else if(landTab==='ship'){
     const trade=tradeIn();
     html=`<div class="card"><h3>Your ship</h3><div class="row" style="justify-content:flex-start;flex-wrap:wrap"><label class="eyebrow" for="shipName">Name</label><input id="shipName" class="text-in" maxlength="24" spellcheck="false" autocomplete="off" value="${esc(G.p.name||'')}" placeholder="Unnamed">
       <span class="eyebrow">Paint</span>${[...PAINTS,...(G.nemesis?.defeated?['#ff3d6e']:[])].map(c=>`<button class="swatch" type="button" data-act="paint" data-c="${c}" aria-label="Paint ${c}" aria-pressed="${(G.p.paint||PAINTS[0])===c}" style="background:${c}"></button>`).join('')}</div></div>
     <p class="desc muted">Your ${esc(HULL[G.p.hullId].name)} and fitted outfits trade in for <span class="mono c-amber">${fmt(trade)} cr</span>. Outfits that fit the new hull move across; the rest are sold.</p>
-    <div class="grid2">${HULLS.filter(h=>h.tech<=port.tech).map(h=>{
+    <div class="grid2">${HULLS.filter(h=>h.tech<=port.tech||h.fac!=null&&h.fac===f&&facRank(f)>=3).map(h=>{
       const cost=h.price-trade,mine=h.id===G.p.hullId,ok=!mine&&G.p.credits>=cost&&cargoUsed()<=h.cargo;
-      return `<div class="card"><div class="row"><h3>${h.name}</h3>${mine?'<span class="chip c-amber">Current</span>':''}</div><p class="desc muted" style="font-size:calc(14px * var(--ui))">${h.desc}</p>
+      return `<div class="card"><div class="row"><h3>${h.name}</h3>${mine?'<span class="chip c-amber">Current</span>':h.fac!=null?`<span class="chip c-cyan">${esc(G.gal.factions[h.fac].name.split(' ').pop())} issue</span>`:''}</div><p class="desc muted" style="font-size:calc(14px * var(--ui))">${h.desc}</p>
       <dl class="kv"><dt>Hull / shield</dt><dd>${h.hull} / ${h.shield}</dd><dt>Speed</dt><dd>${h.speed}</dd><dt>Cargo / fuel</dt><dd>${h.cargo}t / ${h.fuel}</dd><dt>Guns / modules</dt><dd>${h.guns} / ${h.mods}</dd><dt>List price</dt><dd>${fmt(h.price)}</dd></dl>
       <button class="btn ${ok?'primary':''}" data-act="hbuy" data-h="${h.id}" ${ok?'':'disabled'}>${mine?'Owned':cost<=0?`Swap (+${fmt(-cost)} cr)`:`Buy for ${fmt(cost)} cr`}</button></div>`;}).join('')}</div>`;
   }else{
@@ -2053,7 +2163,10 @@ function drawJobMap(){
 function setJobHL(e){const j=e.target.closest&&e.target.closest('.job[data-m]'),id=j?j.dataset.m:null;if(id!==jobHL){jobHL=id;drawJobMap();}}
 landEl.addEventListener('pointerover',setJobHL);landEl.addEventListener('focusin',setJobHL);
 landEl.addEventListener('pointerleave',()=>{jobHL=null;drawJobMap();});
-landEl.addEventListener('change',e=>{if(e.target.id!=='shipName')return;const n=e.target.value.trim().slice(0,24);if(n&&n!==G.p.name)logEv(`Renamed the ship ${n}.`);G.p.name=n;});
+landEl.addEventListener('change',e=>{
+  const fs=e.target.dataset&&e.target.dataset.fr;
+  if(fs){const fr=G.fleet.find(x=>x.id===fs);if(fr){fr.route[+e.target.dataset.leg]=e.target.value||null;fr.leg=0;fr.days=null;fr.last=null;}renderLand();return;}
+  if(e.target.id!=='shipName')return;const n=e.target.value.trim().slice(0,24);if(n&&n!==G.p.name)logEv(`Renamed the ship ${n}.`);G.p.name=n;});
 // ---------- crew ----------
 function crewOffers(sys,port){
   const r=rngFor(G.seed,'crew',sys.id,port.i,G.day),n=rint(r,2,3),out=[];
@@ -2068,6 +2181,28 @@ function crewHtml(sys,port){
   const offers=!c&&port.tech>=3?crewOffers(sys,port).map(o=>`<div class="row"><span><strong>${esc(o.name)}</strong> <span class="muted">· ${HULL[o.hullId].name}, skill ${Math.round(o.skill*10)}/10, ${fmt(o.wage)} cr per jump</span></span><button class="btn sm" data-act="hire" data-c="${o.id}" ${G.p.credits<o.wage?'disabled':''}>Hire · ${fmt(o.wage)} cr</button></div>`).join(''):'';
   return `<div class="card"><h3>Crew</h3>${cur}${offers}${!c&&hints?`<p class="muted" style="margin:0;font-size:calc(13px * var(--ui))">A wingman flies with you, attacks your target and takes half of any bounty they earn. Wages are paid at every jump.</p>`:''}</div>`;
 }
+function factionHtml(sys,port){
+  const f=sys.faction;if(f<0)return '';
+  const F=G.gal.factions[f],v=G.rep[f]||0,i=facRank(f),w=warFor(f),E=G.enlisted;
+  const ladder=FRANKS.map((r,k)=>`<span class="${i>k?'on':'off'}">${i>k?'✓':'○'} ${r[1]}</span><span class="mono ${i>k?'on':'off'}">${r[0]}</span><span class="${i>k?'':'muted'}">${r[2]}</span>`).join('');
+  let war='';
+  if(E){const en=G.gal.factions[E.enemy];war=`<p class="desc" style="margin:0">Enlisted with the ${esc(G.gal.factions[E.side].name)} against the ${esc(en.name)} · <span class="mono">${plural(E.kills,'enemy kill')}</span>. The war's end pays ${fmt(2000)} cr plus ${fmt(1500)} per kill.</p>`;}
+  else if(w){const o=w.fa===f?w.fb:w.fa,O=G.gal.factions[o];
+    war=i>=1?`<p class="desc muted" style="margin:0">The ${esc(F.name)} is at war with the ${esc(O.name)}. Enlist and their patrols become fair game: kills raise your standing here, war jobs appear, and the war's end pays by contribution. The ${esc(O.name)} will mark you wanted.</p><div><button class="btn sm primary" data-act="enlist" data-o="${o}" data-w="${w.id}">Enlist</button></div>`
+      :`<p class="desc muted" style="margin:0">The ${esc(F.name)} is at war with the ${esc(O.name)}, and enlists Associates (standing 10) and above.</p>`;}
+  return `<div class="card"><h3>Standing with the ${esc(F.name)}</h3><p class="muted" style="margin:0">${standingHtml(f)}${i<4?` · ${FRANKS[i][0]-v} more to ${FRANKS[i][1]}`:''}</p><div class="ladder">${ladder}</div>${war}</div>`;
+}
+function fleetHtml(){
+  const keys=Object.keys(G.ledger),opts=sel=>`<option value="">No route</option>${keys.map(k=>`<option value="${k}" ${k===sel?'selected':''}>${esc(portLabel(k))}</option>`).join('')}`;
+  const P=G.fleetPending,whs=Object.entries(G.warehouses).map(([k,w])=>`${esc(portLabel(k))} (${Object.values(w.cargo).reduce((a,b)=>a+b,0)}t)`);
+  const list=G.fleet.map(fr=>`<div class="fr"><div class="row"><strong>${esc(fr.name)}</strong><span class="muted">${fr.status==='distress'?'<span class="c-bad">Under attack</span>':fr.route[0]&&fr.route[1]&&fr.route[0]!==fr.route[1]?`Earned ${fmt(fr.earned||0)} cr`:'Idle'}</span></div>
+    <div class="routes"><select class="sel" data-fr="${fr.id}" data-leg="0" aria-label="${esc(fr.name)} route start">${opts(fr.route[0])}</select><span class="muted">⇄</span><select class="sel" data-fr="${fr.id}" data-leg="1" aria-label="${esc(fr.name)} route end">${opts(fr.route[1])}</select>
+    <button class="btn sm" data-act="fsell" data-f="${fr.id}">Sell · ${fmt(FR_PRICE*.45)} cr</button></div>${fr.last?`<span class="muted" style="font-size:calc(13px * var(--ui))">Last run: ${esc(fr.last)}</span>`:''}</div>`).join('');
+  return `<div class="card"><h3>Fleet</h3>${list}${G.fleet.length<3?`<div class="row"><span>Buy an Ox Hauler with captain <span class="muted">· ${fmt(FR_WAGE)} cr a day</span></span><button class="btn sm" data-act="fbuy" ${G.p.credits<FR_PRICE?'disabled':''}>${fmt(FR_PRICE)} cr</button></div>`:''}
+    ${P.lines.length||P.cr?`<p class="muted" style="margin:0">Since your last landing: ${P.cr>=0?'+':''}${fmt(P.cr)} cr after wages.</p>`:''}
+    ${hints&&!G.fleet.length?`<p class="muted" style="margin:0;font-size:calc(13px * var(--ui))">Freighters run between two ports you have price records for, carrying ${FR_TONS}t of whatever pays best that day, less a broker's cut. Profits arrive when you land.</p>`:''}
+    ${whs.length?`<p class="muted" style="margin:0;font-size:calc(13px * var(--ui))">Warehouses: ${whs.join(', ')}</p>`:''}</div>`;
+}
 function nemesisNews(){
   const N=G.nemesis;if(!N||!N.met||N.defeated)return '';
   return `<div><strong class="c-bad">${esc(N.name)} at large</strong><p class="desc muted" style="font-size:calc(14px * var(--ui));margin:2px 0 8px">Last seen in ${esc(G.gal.systems[N.lastSys].name)}, flying a ${HULL[NEM_TIERS.at(N.tier).h].name}.${N.escapes>=3?' Word is they are done running.':''}</p></div>`;
@@ -2080,8 +2215,8 @@ landEl.addEventListener('click',e=>{
     case 'tab':landTab=d.t;break;
     case 'takeoff':takeOff();return;
     case 'fine':G.p.credits-=+d.n;G.rep[curSys().faction]=-5;save();break;
-    case 'refuel':G.p.credits-=(st.fuel-G.p.fuel)*120;G.p.fuel=st.fuel;break;
-    case 'repair':{const ch=G.crew?computeStats(G.crew.hullId,G.crew.outfits).hull:0;G.p.credits-=Math.round((st.hull-G.p.hull+(G.crew?ch-G.crew.hull:0))*9);G.p.hull=st.hull;if(G.crew)G.crew.hull=ch;break;}
+    case 'refuel':G.p.credits-=(st.fuel-G.p.fuel)*(champ(curSys().faction)?60:120);G.p.fuel=st.fuel;break;
+    case 'repair':{const ch=G.crew?computeStats(G.crew.hullId,G.crew.outfits).hull:0;if(!champ(curSys().faction))G.p.credits-=Math.round((st.hull-G.p.hull+(G.crew?ch-G.crew.hull:0))*9);G.p.hull=st.hull;if(G.crew)G.crew.hull=ch;break;}
     case 'hire':{const c=crewOffers(curSys(),port).find(x=>x.id===d.c);if(c&&!G.crew&&G.p.credits>=c.wage){G.p.credits-=c.wage;G.crew={...c,hull:computeStats(c.hullId,c.outfits).hull};G.crewOrder='attack';logEv(`Hired ${c.name} as wingman.`);}break;}
     case 'letgo':if(G.crew){logEv(`Let ${G.crew.name} go.`);G.crew=null;}break;
     case 'survey':G.p.credits+=G.surveyVal;G.surveyVal=0;break;
@@ -2097,6 +2232,14 @@ landEl.addEventListener('click',e=>{
       G.p.hullId=h.id;G.p.outfits=keep;const ns=stats();G.p.hull=ns.hull;G.p.fuel=ns.fuel;G.p.ammo=Math.min(G.p.ammo,ns.racks*10);
       msg(`You take delivery of a ${h.name}.`,'good');logEv(`Bought a ${h.name}.`);break;}
     case 'paint':G.p.paint=d.c;break;
+    case 'wbuy':{if(G.p.credits<WH_PRICE)break;G.p.credits-=WH_PRICE;G.warehouses[`${curSys().id}.${G.port}`]={cargo:{}};logEv(`Bought a warehouse at ${port.name}.`);landTab='store';break;}
+    case 'wput':case 'wtake':{const w=G.warehouses[`${curSys().id}.${G.port}`],n=+d.n,from=d.act==='wput'?G.p.cargo:w.cargo,to=d.act==='wput'?w.cargo:G.p.cargo;
+      if(!w||n<1||(from[d.g]||0)<n)break;from[d.g]-=n;if(!from[d.g])delete from[d.g];to[d.g]=(to[d.g]||0)+n;break;}
+    case 'fbuy':{if(G.p.credits<FR_PRICE||G.fleet.length>=3)break;G.p.credits-=FR_PRICE;const used=new Set(G.fleet.map(f=>f.name)),name=FR_NAMES.find(n=>!used.has(n))||`Freighter ${G.fleet.length+1}`;
+      const here=`${curSys().id}.${G.port}`;G.fleet.push({id:`f${G.day}.${Math.round(Math.random()*1e6)}`,name,route:[here,null],leg:0,days:null,status:'ok',earned:0});logEv(`Bought the freighter ${name}.`);break;}
+    case 'fsell':{const fr=G.fleet.find(x=>x.id===d.f);if(!fr||fr.status==='distress')break;G.fleet=G.fleet.filter(x=>x!==fr);G.p.credits+=Math.round(FR_PRICE*.45);logEv(`Sold the freighter ${fr.name}.`);break;}
+    case 'enlist':{const sf=curSys().faction,o=+d.o;if(G.enlisted||facRank(sf)<1)break;G.enlisted={war:d.w,side:sf,enemy:o,kills:0,day:G.day};G.rep[o]=Math.min(G.rep[o]||0,-16);
+      logEv(`Enlisted with the ${G.gal.factions[sf].name} against the ${G.gal.factions[o].name}.`);toast(`Enlisted · <b>${esc(G.gal.factions[sf].name)}</b>`);break;}
     case 'accept':{const m=availableMissions(curSys(),port).find(x=>x.id===d.m);if(m)acceptMission(m);break;}
     case 'abandon':{const m=G.missions.find(x=>x.id===d.m);if(m){G.missions=G.missions.filter(x=>x!==m);if(m.issuer>=0)G.rep[m.issuer]-=2;}break;}
   }
@@ -2228,7 +2371,7 @@ $('toTitle').onclick=()=>showTitle();
 
 // ---------- debug hook ----------
 // Only with ?debug in the URL: lets scripted tests reach the game state.
-try{if(new URLSearchParams(location.search).has('debug'))window.__lr={get G(){return G;},get S(){return S;},spawnNPC,setPref,keys,checkMilestones,fileDaily,get mode(){return mode;},get Z(){return Z;},choose,pirateHail,patrolHail,nemesisTaunt,spawnAlly,damage,destroy,jumpOut,landAt,tryJump,startAuto,addGate,claimCore,scanSignal,tryBoard,makeRock,hitRock,enterSystem,doJump};}catch(e){}
+try{if(new URLSearchParams(location.search).has('debug'))window.__lr={get G(){return G;},get S(){return S;},spawnNPC,setPref,keys,checkMilestones,fileDaily,get mode(){return mode;},get Z(){return Z;},choose,pirateHail,patrolHail,nemesisTaunt,spawnAlly,damage,destroy,jumpOut,landAt,tryJump,startAuto,addGate,claimCore,scanSignal,tryBoard,makeRock,hitRock,enterSystem,doJump,fleetTick,settleWar,facRank,renderLand,rollEvents,checkDeadlines,fleetReport};}catch(e){}
 
 // ---------- boot ----------
 window.claude?.hot?.snapshot?.(()=>({save:G?serialize():null,landed:mode==='landed'}));
