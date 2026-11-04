@@ -190,12 +190,13 @@ html,body{overscroll-behavior:none}
         <button class="btn" id="contGame" type="button" hidden>Continue</button>
         <span id="contInfo" class="muted mono" style="font-size:calc(13px * var(--ui))"></span>
       </div>
-      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button><button class="btn sm pref-btn touch-only" type="button" data-pref="haptics"></button><button class="btn sm fs-btn touch-only" type="button">Full screen</button></div>
+      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button><button class="btn sm pref-btn" type="button" data-pref="aim"></button><button class="btn sm pref-btn touch-only" type="button" data-pref="haptics"></button><button class="btn sm fs-btn touch-only" type="button">Full screen</button></div>
       <ul class="touch-help touch-only" aria-label="Touch controls">
         <li><b>Stick</b> drag to aim; push further to thrust</li>
         <li><b>RETRO</b> turn against your drift to slow down</li>
         <li><b>FIRE</b> / <b>MSL</b> guns and seeker missiles</li>
-        <li><b>Tap a ship</b> to target it</li>
+        <li><b>Tap a ship</b> to target it; whoever shoots you is targeted for you</li>
+        <li><b>◎ marker</b> where to aim; amber means FIRE will hit</li>
         <li><b>Tap a port</b> to autopilot in and land</li>
         <li><b>AUTO</b> land, or fly your route and jump</li>
         <li><b>MAP</b> plot a route; <b>JUMP</b> once past the ring</li>
@@ -214,6 +215,7 @@ html,body{overscroll-behavior:none}
         <div><kbd>G</kbd> autopilot: land, or fly out and jump</div>
         <div><kbd>Esc</kbd> pause and controls</div>
         <div>Click a ship to target it, a port to autopilot there</div>
+        <div>The ◎ marker on your target shows where to aim</div>
       </div>
     </div>
   </div>
@@ -240,7 +242,8 @@ html,body{overscroll-behavior:none}
         <li><b>Stick</b> drag to aim; push further to thrust</li>
         <li><b>RETRO</b> turn against your drift to slow down</li>
         <li><b>FIRE</b> / <b>MSL</b> guns and seeker missiles</li>
-        <li><b>Tap a ship</b> to target it</li>
+        <li><b>Tap a ship</b> to target it; whoever shoots you is targeted for you</li>
+        <li><b>◎ marker</b> where to aim; amber means FIRE will hit</li>
         <li><b>Tap a port</b> to autopilot in and land</li>
         <li><b>AUTO</b> land, or fly your route and jump</li>
         <li><b>MAP</b> plot a route; <b>JUMP</b> once past the ring</li>
@@ -252,7 +255,7 @@ html,body{overscroll-behavior:none}
         <div><kbd>L</kbd> land</div><div><kbd>M</kbd> map</div><div><kbd>J</kbd> jump</div><div><kbd>B</kbd> board or scan</div><div><kbd>G</kbd> autopilot</div>
       </div>
       <p class="desc muted">To jump, plot a route on the map, then fly outside the dashed jump ring and press <span class="keys-only">J</span><span class="touch-only">JUMP</span>. Each jump burns one unit of fuel and takes a day. Ships drop to a disabled drift when their hull is badly damaged; fly alongside slowly and press <span class="keys-only">B</span><span class="touch-only">BOARD</span> to board. Signals on your radar pulse amber: fly to them and press <span class="keys-only">B</span><span class="touch-only">BOARD</span> to scan.</p>
-      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button><button class="btn sm pref-btn touch-only" type="button" data-pref="haptics"></button><button class="btn sm fs-btn touch-only" type="button">Full screen</button></div>
+      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button><button class="btn sm pref-btn" type="button" data-pref="aim"></button><button class="btn sm pref-btn touch-only" type="button" data-pref="haptics"></button><button class="btn sm fs-btn touch-only" type="button">Full screen</button></div>
     </div>
   </div>
 </div>
@@ -476,8 +479,8 @@ function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.par
 // Hints: coaching text, price labels and job pairing. Off leaves the player to work it out.
 let AC=null,master=null,noiseBuf=null,eng=null,mus=null;const lastPlayed={};
 // Player preferences, kept per browser. The first value of each is the default.
-const PREFS={hints:['on','off'],sound:['100','50','0'],music:['100','50','0'],text:['100','120','140'],speed:['100','75','50'],haptics:['on','off']};
-const PREF_LABEL={hints:v=>`Hints: ${v}`,sound:v=>v==='0'?'Sound: off':`Sound: ${v}%`,music:v=>v==='0'?'Music: off':`Music: ${v}%`,text:v=>`Text: ${v}%`,speed:v=>`Speed: ${v}%`,haptics:v=>`Vibration: ${v}`};
+const PREFS={hints:['on','off'],sound:['100','50','0'],music:['100','50','0'],text:['100','120','140'],speed:['100','75','50'],haptics:['on','off'],aim:['touch','on','off']};
+const PREF_LABEL={hints:v=>`Hints: ${v}`,sound:v=>v==='0'?'Sound: off':`Sound: ${v}%`,music:v=>v==='0'?'Music: off':`Music: ${v}%`,text:v=>`Text: ${v}%`,speed:v=>`Speed: ${v}%`,haptics:v=>`Vibration: ${v}`,aim:v=>v==='touch'?'Aim assist: touch':`Aim assist: ${v}`};
 const pref={};for(const k in PREFS){let v=null;try{v=localStorage.getItem('lanternreach-'+k);}catch(e){}pref[k]=PREFS[k].includes(v)?v:PREFS[k][0];}
 let hints,ui,speed,vol,mvol;
 function applyPrefs(){vol=+pref.sound/100;if(master)master.gain.value=vol*.6;mvol=+pref.music/100;if(mus)mus.bus.gain.setTargetAtTime(mvol*.4,AC.currentTime,.4);hints=pref.hints==='on';ui=+pref.text/100;speed=+pref.speed/100;document.documentElement.style.setProperty('--ui',ui);}
@@ -487,6 +490,7 @@ const tip=t=>hints?' '+t:'';
 const touchUI=()=>document.body.dataset.input==='touch';
 const tipK=(keysText,touchText)=>tip(touchUI()?touchText:keysText);
 const kp=(k,t)=>touchUI()?t:`[${k}] ${t}`;
+const aimAssist=()=>pref.aim==='on'||pref.aim==='touch'&&touchUI();
 function buzz(p){if(touchUI()&&pref.haptics==='on'&&navigator.vibrate)try{navigator.vibrate(p);}catch(e){}}
 // ---------- sound ----------
 // Everything is synthesised with Web Audio, so there are no files to load. Browsers only allow
@@ -746,10 +750,10 @@ function checkDeadlines(){
 
 // ---------- canvas ----------
 const cv=$('game'),cx=cv.getContext('2d');
-let W=0,H=0,DPR=1,Z=1;
+let W=0,H=0,DPR=1,Z=1,ZB=1;
 let needsDraw=true;
 const coarse=matchMedia('(pointer:coarse)');
-function resize(){DPR=Math.min(1.5,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);Z=clamp(Math.min(W,H)/820,.5,1);needsDraw=true;if(!$('map').hidden)sizeMap();if($('jobmap'))drawJobMap();}
+function resize(){DPR=Math.min(1.5,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ZB=clamp(Math.min(W,H)/820,.5,1);Z=ZB*(S&&S.zk||1);needsDraw=true;if(!$('map').hidden)sizeMap();if($('jobmap'))drawJobMap();}
 addEventListener('resize',resize);resize();
 
 // each parallax layer is pre-rendered once into a 1024px tile, then blitted a few times per frame
@@ -840,11 +844,24 @@ function wantsToAttack(a,b){if(b.player)return hostileToPlayer(a);if(a.ai.kind==
 function chooseTarget(s){let best=null,bd=1700;for(const o of ships()){if(o===s||o.dead||!wantsToAttack(s,o))continue;let d=Math.hypot(o.x-s.x,o.y-s.y);if(o.player)d*=.7;if(d<bd){bd=d;best=o;}}return best;}
 function steer(s,want,dt){const d=angDiff(s.a,want),m=s.st.turn*dt;s.a+=clamp(d,-m,m);return Math.abs(d);}
 function thrust(s,dt,mul=1){s.vx+=Math.cos(s.a)*s.st.accel*dt*mul;s.vy+=Math.sin(s.a)*s.st.accel*dt*mul;s.thrusting=true;}
+// Where to aim so a shot of the given muzzle speed meets the target. Shots inherit the
+// shooter's velocity, so only relative motion matters.
+function leadAim(s,t,speed){
+  const px=t.x-s.x,py=t.y-s.y,vx=t.vx-s.vx,vy=t.vy-s.vy,a=vx*vx+vy*vy-speed*speed,b=2*(px*vx+py*vy),c=px*px+py*py;
+  let lt=-1;
+  if(Math.abs(a)<1e-6)lt=b?-c/b:-1;else{const D=b*b-4*a*c;if(D>=0){const r=Math.sqrt(D),t1=(-b-r)/(2*a),t2=(-b+r)/(2*a);lt=Math.min(t1,t2)>0?Math.min(t1,t2):Math.max(t1,t2);}}
+  if(!(lt>0))lt=Math.sqrt(c)/speed;
+  const x=px+vx*lt,y=py+vy*lt;return{x,y,lt,a:Math.atan2(y,x)};
+}
+// Aim assist: if the player fires within this cone of the lead point, the shots bend onto it.
+const ASSIST_CONE=.21;
 function fireGuns(s){
   const n=s.st.guns.length,ca=Math.cos(s.a),sa=Math.sin(s.a);
+  const at=s.player&&aimAssist()&&S.target&&!S.target.dead?S.target:null;
   s.st.guns.forEach((o,i)=>{if((s.cd[i]||0)>0)return;s.cd[i]=o.rate*(s.player?1:1.25);
-    const off=(i-(n-1)/2)*4,sp=(Math.random()-.5)*.03;
-    S.shots.push({x:s.x+ca*s.size*1.1-sa*off,y:s.y+sa*s.size*1.1+ca*off,vx:s.vx+Math.cos(s.a+sp)*o.speed,vy:s.vy+Math.sin(s.a+sp)*o.speed,life:o.life,o,owner:s});play(o.id,s.x,s.y);});
+    const off=(i-(n-1)/2)*4,sp=(Math.random()-.5)*.03;let dir=s.a;
+    if(at){const L=leadAim(s,at,o.speed);if(Math.abs(angDiff(s.a,L.a))<ASSIST_CONE)dir=L.a;}
+    S.shots.push({x:s.x+ca*s.size*1.1-sa*off,y:s.y+sa*s.size*1.1+ca*off,vx:s.vx+Math.cos(dir+sp)*o.speed,vy:s.vy+Math.sin(dir+sp)*o.speed,life:o.life,o,owner:s});play(o.id,s.x,s.y);});
 }
 function fireMissile(s,tgt){
   if(!s.st.racks||s.rcd>0)return;
@@ -864,6 +881,8 @@ function damage(s,o,shooter){
   if(s.shield>=d)s.shield-=d;else{const frac=(d-s.shield)/d;s.shield=0;s.hull-=o.dmg*(o.hullMul||1)*frac;}
   s.hitT=.12;s.lastHit=S.t;play(s.shield>0?'shield':s.player?'hurt':'hull',s.x,s.y);if(s.player)buzz(s.shield>0?12:35);
   if(shooter&&shooter.player&&!s.player)provoke(s);
+  // whoever shoots you becomes your target, unless you already have a hostile one picked
+  if(s.player&&shooter&&!shooter.player&&!shooter.dead&&(!S.target||S.target.dead||!hostileToPlayer(S.target))){S.target=shooter;play('blip');}
   if(s.bountyId&&shooter&&shooter.player&&!s.called){s.called=true;msg(`${s.name} calls in backup!`,'bad');for(let i=dangerOf(S.sys)>.6?2:1;i>0;i--){const w=spawnNPC('pirate');w.ai.tgt=S.me;}}
   if(!s.player&&shooter&&!shooter.player&&s.ai.kind==='trader')s.fleeFrom=shooter;
   if(s.hull<=0)destroy(s,shooter);
@@ -988,6 +1007,9 @@ function update(dt){
   for(const p of S.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=1-1.5*dt;p.vy*=1-1.5*dt;p.life-=dt;}
   S.parts=S.parts.filter(p=>p.life>0);
   S.shake*=Math.pow(.02,dt);
+  // On touch screens the view eases in while a hostile ship is close, so fights are readable.
+  const fight=touchUI()&&!me.dead&&!S.jump&&S.ships.some(s=>hostileToPlayer(s)&&Math.hypot(s.x-me.x,s.y-me.y)<900);
+  const zk=S.zk||1,want=fight?Math.max(1,.75/ZB):1;S.zk=zk+(want-zk)*Math.min(1,dt*(want>zk?1.6:.8));Z=ZB*S.zk;
   S.spawnT-=dt;
   if(S.spawnT<=0){S.spawnT=(7+Math.random()*12)/(.5+S.sys.traffic);if(S.ships.length<10)spawnNPC();}
 }
@@ -1149,9 +1171,22 @@ function drawWorld(){
   for(const s of S.ships)drawShip(s);
   if(!me.dead)drawShip(me);
   if(S.target&&!S.target.dead){const t=S.target,r=t.size*1.9;cx.strokeStyle=hostileToPlayer(t)?'#ff6262':'#62d5ff';cx.lineWidth=1.5/Z;
-    for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;cx.beginPath();cx.arc(t.x,t.y,r,a-.3,a+.3);cx.stroke();}}
+    for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;cx.beginPath();cx.arc(t.x,t.y,r,a-.3,a+.3);cx.stroke();}
+    drawLeadPip(t);}
   cx.setTransform(DPR,0,0,DPR,0,0);
   if(S.jump&&S.jump.t>.6){cx.fillStyle=`rgba(220,240,255,${clamp((S.jump.t-1.5)*2.5,0,1)})`;cx.fillRect(0,0,W,H);}
+}
+// Lead marker: where to point the nose to hit the target. Amber when FIRE would hit: inside the
+// aim-assist cone when that is on, otherwise when the target's width covers the aim line.
+function drawLeadPip(t){
+  const me=S.me,g=me.st.guns[0];if(me.dead||!g||t.disabled)return;
+  const d=Math.hypot(t.x-me.x,t.y-me.y);if(d>1500)return;
+  const L=leadAim(me,t,g.speed),px=me.x+L.x,py=me.y+L.y,off=Math.abs(angDiff(me.a,L.a));
+  const tol=aimAssist()?ASSIST_CONE:Math.atan2(t.size*.9,Math.hypot(L.x,L.y)),on=off<tol,inRange=Math.hypot(L.x,L.y)<g.speed*g.life*1.05;
+  const col=on&&inRange?'#ffb547':'rgba(225,231,242,.7)',r=7/Z;
+  cx.strokeStyle='rgba(225,231,242,.25)';cx.lineWidth=1/Z;cx.setLineDash([3/Z,4/Z]);cx.beginPath();cx.moveTo(t.x,t.y);cx.lineTo(px,py);cx.stroke();cx.setLineDash([]);
+  cx.strokeStyle=col;cx.lineWidth=(on?2:1.5)/Z;cx.beginPath();cx.arc(px,py,r,0,TAU);cx.stroke();
+  cx.beginPath();cx.moveTo(px-r*1.7,py);cx.lineTo(px-r*.5,py);cx.moveTo(px+r*.5,py);cx.lineTo(px+r*1.7,py);cx.moveTo(px,py-r*1.7);cx.lineTo(px,py-r*.5);cx.moveTo(px,py+r*.5);cx.lineTo(px,py+r*1.7);cx.stroke();
 }
 function toScreen(x,y){return[(x-S.me.x)*Z/ui+W/2,(y-S.me.y)*Z/ui+H/2];}
 function edgeMarker(x,y,label,color){
