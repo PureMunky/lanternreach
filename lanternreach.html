@@ -109,29 +109,67 @@ kbd{font-family:var(--f-mono);font-size:calc(12px * var(--ui));border:1px solid 
 .mapinfo{width:290px;border-left:1px solid var(--line);padding:16px;overflow:auto;display:flex;flex-direction:column;gap:12px}
 @media (max-width:720px){.map-main{flex-direction:column}#mapc{flex:1 1 0;min-height:0}.mapinfo{flex:none;width:auto;border-left:0;border-top:1px solid var(--line);max-height:42%}
   .map-dock .dock-head{padding:12px 14px 10px}.map-dock .dock-head .btn{padding:6px 10px}}
+/* Touch controls: a floating thumbstick on the left, fire buttons on the right, actions along the top.
+   Shown while the last input was a finger, so keyboard and mouse players never see them. */
 #touch{position:fixed;inset:auto 0 0 0;z-index:3;display:none;justify-content:space-between;align-items:flex-end;pointer-events:none;
   padding:0 max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
-#touch .pad{display:grid;gap:8px;pointer-events:auto}
-#touch .pad.l{grid-template-columns:repeat(3,58px)}
-#touch .pad.r{grid-template-columns:repeat(2,64px)}
-#touch button{height:58px;background:rgba(13,19,33,.7);border:1px solid var(--line-hi);color:var(--ink);font-family:var(--f-display);font-size:13px;letter-spacing:.05em;user-select:none;-webkit-user-select:none}
-#touch button:active{border-color:var(--amber);color:var(--amber)}
-#touchTop{position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:3;display:none;gap:6px}
-@media (max-width:420px){#touchTop{gap:4px}#touchTop button{padding:8px 7px}}
-#touchTop button{background:rgba(13,19,33,.7);border:1px solid var(--line-hi);color:var(--ink);font-family:var(--f-display);font-size:12px;padding:8px 10px;letter-spacing:.06em}
-@media (pointer:coarse){#touch,#touchTop{display:flex}}
+#touch,#touchTop,#game{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#stick{position:relative;width:160px;height:160px;pointer-events:auto;touch-action:none}
+#stick .base{position:absolute;left:50%;top:50%;width:112px;height:112px;margin:-56px 0 0 -56px;border-radius:50%;border:1px solid var(--line-hi);background:rgba(13,19,33,.45);opacity:.55;transition:opacity .15s}
+#stick.on .base{opacity:1}
+#stick .knob{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:rgba(98,213,255,.22);border:2px solid var(--cyan);transition:transform .08s}
+#stick.on .knob{transition:none}
+#stick.go .knob{border-color:var(--amber);background:rgba(255,181,71,.3)}
+#stick .lbl{position:absolute;left:0;right:0;bottom:-2px;text-align:center;font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;color:var(--dim);pointer-events:none}
+#stick.on .lbl{visibility:hidden}
+#touch .pad.r{display:grid;gap:8px;pointer-events:auto;grid-template-columns:64px 84px}
+#touch .pad.r .fire{grid-column:1/3;height:72px;font-size:15px;border-color:var(--amber);color:var(--amber)}
+#touch button{height:58px;background:rgba(13,19,33,.7);border:1px solid var(--line-hi);color:var(--ink);font-family:var(--f-display);font-size:13px;letter-spacing:.05em;touch-action:none}
+#touch button:active,#touch button.down{border-color:var(--amber);color:var(--amber);background:rgba(255,181,71,.18)}
+#touchTop{position:fixed;top:max(8px,env(safe-area-inset-top,0px));left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));z-index:3;display:none;gap:5px;justify-content:center}
+#touchTop button{flex:0 1 auto;min-width:0;height:44px;background:rgba(13,19,33,.72);border:1px solid var(--line-hi);color:var(--ink);font-family:var(--f-display);font-size:12px;padding:0 10px;letter-spacing:.05em;touch-action:none}
+@media (max-width:480px){#touchTop{gap:4px}#touchTop button{flex:1 1 0;padding:0 2px;font-size:11px;letter-spacing:.02em}#touchTop .menu{flex:0 0 40px}}
+#touchTop button.ready{border-color:var(--amber);color:var(--amber-ink);background:var(--amber)}
+#touchTop button.on{border-color:var(--cyan);color:var(--cyan)}
+#touchTop button:active{filter:brightness(1.3)}
+body[data-input="touch"] #touch,body[data-input="touch"] #touchTop{display:flex}
 body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{display:none}
+/* Input-specific help and settings */
+.touch-only{display:none}
+body[data-input="touch"] .touch-only{display:revert}
+body[data-input="touch"] .keys-only{display:none}
+body[data-input="touch"] .touch-help{display:grid}
+.touch-help{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px 18px;font-size:calc(14px * var(--ui));margin:0;padding:0;list-style:none}
+.touch-help b{font-family:var(--f-display);font-weight:600;color:var(--amber);letter-spacing:.04em}
+/* Bigger tap targets for fingers */
+body[data-input="touch"]{-webkit-tap-highlight-color:transparent}
+body[data-input="touch"] .btn{min-height:44px;padding:8px 14px}
+body[data-input="touch"] .btn.sm{min-height:40px;padding:6px 12px}
+body[data-input="touch"] a.btn{display:inline-flex;align-items:center}
+body[data-input="touch"] .tab{min-height:44px}
+body[data-input="touch"] .swatch{width:36px;height:36px}
+body[data-input="touch"] details summary{padding:8px 0}
+button,a,input{touch-action:manipulation}
+html,body{overscroll-behavior:none}
+/* Phone: docks use the whole screen instead of floating with a margin. */
+@media (max-width:640px){
+  .overlay{padding:max(6px,env(safe-area-inset-top,0px)) env(safe-area-inset-right,0px) max(6px,env(safe-area-inset-bottom,0px)) env(safe-area-inset-left,0px)}
+  .dock{border-left:0;border-right:0}
+  .dock-head{padding:12px 16px 10px}.dock-body{padding:14px 16px}.dock-foot{padding:10px 16px}
+  .tab{padding:10px 9px;letter-spacing:.03em}
+  .dock-foot .btn.primary{flex:1 1 auto;text-align:center}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <canvas id="game" aria-label="Flight view"></canvas>
 
 <div id="touchTop" aria-hidden="true">
-  <button data-key="l">LAND</button><button data-key="j">JUMP</button><button data-key="m">MAP</button><button data-key="tab">TARGET</button><button data-key="b">BOARD</button><button data-key="g">AUTO</button>
+  <button class="menu" data-key="escape" aria-label="Pause">☰</button><button data-key="l">LAND</button><button data-key="j">JUMP</button><button data-key="m">MAP</button><button data-key="tab">TARGET</button><button data-key="b">BOARD</button><button data-key="g">AUTO</button>
 </div>
 <div id="touch" aria-hidden="true">
-  <div class="pad l"><button data-key="a">◀</button><button data-key="w">THRUST</button><button data-key="d">▶</button><span></span><button data-key="s">RETRO</button><span></span></div>
-  <div class="pad r"><button data-key="f">MSL</button><button data-key=" ">FIRE</button></div>
+  <div id="stick"><div class="base"><div class="knob"></div></div><div class="lbl">AIM · PUSH TO THRUST</div></div>
+  <div class="pad r"><button data-key="s">RETRO</button><button data-key="f">MSL</button><button class="fire" data-key=" ">FIRE</button></div>
 </div>
 
 <div id="title" class="overlay">
@@ -152,8 +190,18 @@ body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{dis
         <button class="btn" id="contGame" type="button" hidden>Continue</button>
         <span id="contInfo" class="muted mono" style="font-size:calc(13px * var(--ui))"></span>
       </div>
-      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button></div>
-      <div class="keys" aria-label="Controls">
+      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button><button class="btn sm pref-btn touch-only" type="button" data-pref="haptics"></button><button class="btn sm fs-btn touch-only" type="button">Full screen</button></div>
+      <ul class="touch-help touch-only" aria-label="Touch controls">
+        <li><b>Stick</b> drag to aim; push further to thrust</li>
+        <li><b>RETRO</b> turn against your drift to slow down</li>
+        <li><b>FIRE</b> / <b>MSL</b> guns and seeker missiles</li>
+        <li><b>Tap a ship</b> to target it</li>
+        <li><b>Tap a port</b> to autopilot in and land</li>
+        <li><b>AUTO</b> land, or fly your route and jump</li>
+        <li><b>MAP</b> plot a route; <b>JUMP</b> once past the ring</li>
+        <li><b>☰</b> pause, settings and help</li>
+      </ul>
+      <div class="keys keys-only" aria-label="Controls">
         <div><kbd>W</kbd><kbd>A</kbd><kbd>D</kbd> fly</div>
         <div><kbd>S</kbd> turn to retro</div>
         <div><kbd>Space</kbd> fire guns</div>
@@ -165,6 +213,7 @@ body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{dis
         <div><kbd>B</kbd> board ship or scan signal</div>
         <div><kbd>G</kbd> autopilot: land, or fly out and jump</div>
         <div><kbd>Esc</kbd> pause and controls</div>
+        <div>Click a ship to target it, a port to autopilot there</div>
       </div>
     </div>
   </div>
@@ -186,14 +235,24 @@ body:not([data-mode="space"]) #touch,body:not([data-mode="space"]) #touchTop{dis
   <div class="dock title-dock">
     <div class="dock-body">
       <div class="eyebrow">Paused</div><h2>Flight controls</h2>
-      <div class="keys">
+      <div class="row" style="justify-content:flex-start"><button class="btn primary" id="resume" type="button">Resume</button><button class="btn" id="quit" type="button">Quit to title</button></div>
+      <ul class="touch-help touch-only" aria-label="Touch controls">
+        <li><b>Stick</b> drag to aim; push further to thrust</li>
+        <li><b>RETRO</b> turn against your drift to slow down</li>
+        <li><b>FIRE</b> / <b>MSL</b> guns and seeker missiles</li>
+        <li><b>Tap a ship</b> to target it</li>
+        <li><b>Tap a port</b> to autopilot in and land</li>
+        <li><b>AUTO</b> land, or fly your route and jump</li>
+        <li><b>MAP</b> plot a route; <b>JUMP</b> once past the ring</li>
+        <li><b>☰</b> pause, settings and help</li>
+      </ul>
+      <div class="keys keys-only">
         <div><kbd>W</kbd> thrust</div><div><kbd>A</kbd><kbd>D</kbd> turn</div><div><kbd>S</kbd> turn to retro</div>
         <div><kbd>Space</kbd> guns</div><div><kbd>F</kbd> seeker missile</div><div><kbd>Tab</kbd> cycle target</div>
         <div><kbd>L</kbd> land</div><div><kbd>M</kbd> map</div><div><kbd>J</kbd> jump</div><div><kbd>B</kbd> board or scan</div><div><kbd>G</kbd> autopilot</div>
       </div>
-      <p class="desc muted">To jump, plot a route on the map, then fly outside the dashed jump ring and press J. Each jump burns one unit of fuel and takes a day. Ships drop to a disabled drift when their hull is badly damaged; fly alongside slowly and press B to board. Signals on your radar pulse amber: fly to them and press B to scan.</p>
-      <div class="row" style="justify-content:flex-start"><button class="btn primary" id="resume" type="button">Resume</button><button class="btn" id="quit" type="button">Quit to title</button></div>
-      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button></div>
+      <p class="desc muted">To jump, plot a route on the map, then fly outside the dashed jump ring and press <span class="keys-only">J</span><span class="touch-only">JUMP</span>. Each jump burns one unit of fuel and takes a day. Ships drop to a disabled drift when their hull is badly damaged; fly alongside slowly and press <span class="keys-only">B</span><span class="touch-only">BOARD</span> to board. Signals on your radar pulse amber: fly to them and press <span class="keys-only">B</span><span class="touch-only">BOARD</span> to scan.</p>
+      <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button><button class="btn sm pref-btn touch-only" type="button" data-pref="haptics"></button><button class="btn sm fs-btn touch-only" type="button">Full screen</button></div>
     </div>
   </div>
 </div>
@@ -417,13 +476,18 @@ function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.par
 // Hints: coaching text, price labels and job pairing. Off leaves the player to work it out.
 let AC=null,master=null,noiseBuf=null,eng=null,mus=null;const lastPlayed={};
 // Player preferences, kept per browser. The first value of each is the default.
-const PREFS={hints:['on','off'],sound:['100','50','0'],music:['100','50','0'],text:['100','120','140'],speed:['100','75','50']};
-const PREF_LABEL={hints:v=>`Hints: ${v}`,sound:v=>v==='0'?'Sound: off':`Sound: ${v}%`,music:v=>v==='0'?'Music: off':`Music: ${v}%`,text:v=>`Text: ${v}%`,speed:v=>`Speed: ${v}%`};
+const PREFS={hints:['on','off'],sound:['100','50','0'],music:['100','50','0'],text:['100','120','140'],speed:['100','75','50'],haptics:['on','off']};
+const PREF_LABEL={hints:v=>`Hints: ${v}`,sound:v=>v==='0'?'Sound: off':`Sound: ${v}%`,music:v=>v==='0'?'Music: off':`Music: ${v}%`,text:v=>`Text: ${v}%`,speed:v=>`Speed: ${v}%`,haptics:v=>`Vibration: ${v}`};
 const pref={};for(const k in PREFS){let v=null;try{v=localStorage.getItem('lanternreach-'+k);}catch(e){}pref[k]=PREFS[k].includes(v)?v:PREFS[k][0];}
 let hints,ui,speed,vol,mvol;
 function applyPrefs(){vol=+pref.sound/100;if(master)master.gain.value=vol*.6;mvol=+pref.music/100;if(mus)mus.bus.gain.setTargetAtTime(mvol*.4,AC.currentTime,.4);hints=pref.hints==='on';ui=+pref.text/100;speed=+pref.speed/100;document.documentElement.style.setProperty('--ui',ui);}
 applyPrefs();
 const tip=t=>hints?' '+t:'';
+// Touch players see the on-screen button names instead of keys.
+const touchUI=()=>document.body.dataset.input==='touch';
+const tipK=(keysText,touchText)=>tip(touchUI()?touchText:keysText);
+const kp=(k,t)=>touchUI()?t:`[${k}] ${t}`;
+function buzz(p){if(touchUI()&&pref.haptics==='on'&&navigator.vibrate)try{navigator.vibrate(p);}catch(e){}}
 // ---------- sound ----------
 // Everything is synthesised with Web Audio, so there are no files to load. Browsers only allow
 // audio after a user gesture, so the context starts on the first key press or tap. Sounds from
@@ -784,7 +848,7 @@ function fireGuns(s){
 }
 function fireMissile(s,tgt){
   if(!s.st.racks||s.rcd>0)return;
-  if(s.player){if(G.p.ammo<=0){msg('No seeker missiles left.','bad');s.rcd=.6;return;}if(!tgt){msg('No target selected.'+tip('Press Tab to cycle targets.'));s.rcd=.4;return;}G.p.ammo--;}
+  if(s.player){if(G.p.ammo<=0){msg('No seeker missiles left.','bad');s.rcd=.6;return;}if(!tgt){msg('No target selected.'+tipK('Press Tab to cycle targets.','Tap a ship, or TARGET, to select one.'));s.rcd=.4;return;}G.p.ammo--;}
   s.rcd=s.player?.8:2.5;
   S.shots.push({x:s.x,y:s.y,vx:s.vx+Math.cos(s.a)*120,vy:s.vy+Math.sin(s.a)*120,a:s.a,life:MISSILE.life,o:MISSILE,owner:s,missile:true,tgt});play('missile',s.x,s.y);
 }
@@ -798,7 +862,7 @@ function damage(s,o,shooter){
   if(s.dead)return;
   const d=o.dmg*(o.shieldMul||1);
   if(s.shield>=d)s.shield-=d;else{const frac=(d-s.shield)/d;s.shield=0;s.hull-=o.dmg*(o.hullMul||1)*frac;}
-  s.hitT=.12;s.lastHit=S.t;play(s.shield>0?'shield':s.player?'hurt':'hull',s.x,s.y);
+  s.hitT=.12;s.lastHit=S.t;play(s.shield>0?'shield':s.player?'hurt':'hull',s.x,s.y);if(s.player)buzz(s.shield>0?12:35);
   if(shooter&&shooter.player&&!s.player)provoke(s);
   if(s.bountyId&&shooter&&shooter.player&&!s.called){s.called=true;msg(`${s.name} calls in backup!`,'bad');for(let i=dangerOf(S.sys)>.6?2:1;i>0;i--){const w=spawnNPC('pirate');w.ai.tgt=S.me;}}
   if(!s.player&&shooter&&!shooter.player&&s.ai.kind==='trader')s.fleeFrom=shooter;
@@ -807,7 +871,7 @@ function damage(s,o,shooter){
 }
 function destroy(s,shooter){
   s.dead=true;explode(s);
-  if(s.player){G.p.hull=0;S.deadT=2.2;return;}
+  if(s.player){G.p.hull=0;S.deadT=2.2;buzz([90,50,200]);return;}
   if(S.target===s)S.target=null;
   if(s.bountyId){const m=G.missions.find(x=>x.id===s.bountyId);if(m)payMission(m,'Bounty claimed');}
   if(shooter&&shooter.player){
@@ -879,10 +943,13 @@ function update(dt){
       if(j.t>.5&&al<.1){me.jumping=true;thrust(me,dt,10);}
       if(j.t>1.9){doJump();return;}
     }else{
-      const manual=keys.a||keys.d||keys.w||keys.s||keys.arrowleft||keys.arrowright||keys.arrowup||keys.arrowdown;
+      const sk=stick&&stick.mag>.18?stick:null;
+      const manual=sk||keys.a||keys.d||keys.w||keys.s||keys.arrowleft||keys.arrowright||keys.arrowup||keys.arrowdown;
       if(S.auto&&manual){S.auto=null;msg('Autopilot off.');}
       if(S.auto)autoFly(dt);
       else{
+      // thumbstick: point the ship where the stick points; push past 60% to burn
+      if(sk){steer(me,sk.a,dt);if(sk.mag>.6&&Math.abs(angDiff(me.a,sk.a))<.8)thrust(me,dt);}
       if(keys.a||keys.arrowleft)me.a-=me.st.turn*dt;
       if(keys.d||keys.arrowright)me.a+=me.st.turn*dt;
       if(keys.w||keys.arrowup)thrust(me,dt);
@@ -934,7 +1001,7 @@ function startAuto(){
   if(S.auto){S.auto=null;msg('Autopilot off.');return;}
   if(G.route.length){S.auto={kind:'jump'};msg(`Autopilot: flying out to jump for ${G.gal.systems[G.route[0]].name}.`);return;}
   const me=S.me,ports=S.sys.ports;
-  if(!ports.length){msg('Autopilot: nowhere to land here.'+tip('Plot a route on the map (M) to fly out and jump.'));return;}
+  if(!ports.length){msg('Autopilot: nowhere to land here.'+tipK('Plot a route on the map (M) to fly out and jump.','Plot a route on the MAP to fly out and jump.'));return;}
   const p=S.nav||ports.reduce((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)<Math.hypot(b.x-me.x,b.y-me.y)?a:b);
   S.nav=p;S.auto={kind:'land',p};msg(`Autopilot: landing on ${p.name}.`);
 }
@@ -968,11 +1035,11 @@ function tryLand(){
   let best=null,bd=1e9;for(const p of ports){const d=Math.hypot(p.x-me.x,p.y-me.y)-p.size;if(d<bd){bd=d;best=p;}}
   S.nav=best;const sp=Math.hypot(me.vx,me.vy);
   if(bd<40&&sp<150)landAt(best);
-  else if(bd<40)msg('Too fast to land.'+tip('Hold S to turn retro and burn.'));
-  else msg(`Nav set to ${best.name}.`+tip('Fly over it slowly and press L, or press G for autopilot.'));
+  else if(bd<40)msg('Too fast to land.'+tipK('Hold S to turn retro and burn.','Hold RETRO, then push the stick to brake.'));
+  else msg(`Nav set to ${best.name}.`+tipK('Fly over it slowly and press L, or press G for autopilot.','Fly over it slowly and tap LAND, or tap AUTO.'));
 }
 function landAt(p){
-  G.port=p.i;mode='landed';play('land');
+  G.port=p.i;mode='landed';play('land');buzz(20);
   const sys=curSys();
   for(const m of [...G.missions])if((m.type==='cargo'||m.type==='passenger')&&m.dest===sys.id&&m.destPort===p.i)payMission(m,m.type==='cargo'?'Cargo delivered':'Passengers delivered');
   for(const m of [...G.missions])if(m.type==='contract'&&m.destPort!=null&&m.dest===sys.id&&m.destPort===p.i)stepContract(m);
@@ -987,7 +1054,7 @@ function takeOff(){
 }
 function tryJump(){
   const me=S.me;
-  if(!G.route.length){msg('No route plotted.'+tip('Open the map (M) and choose a destination.'));return;}
+  if(!G.route.length){msg('No route plotted.'+tipK('Open the map (M) and choose a destination.','Open the MAP and choose a destination.'));return;}
   const next=G.route[0];
   if(!S.sys.links.includes(next)){G.route=[];msg('Route no longer valid.'+tip('Plot it again on the map.'),'bad');return;}
   const bl=blockOf(G.loc,next);
@@ -998,7 +1065,7 @@ function tryJump(){
     return;
   }
   if(Math.hypot(me.x,me.y)<JUMP_DIST){msg(`Too deep in ${S.sys.name}'s gravity well.`+tip('Fly past the dashed ring.'));return;}
-  const to=G.gal.systems[next];play('jump');S.jump={t:0,to:next,ang:Math.atan2(to.y-S.sys.y,to.x-S.sys.x)};
+  const to=G.gal.systems[next];play('jump');buzz([15,60,15,60,40]);S.jump={t:0,to:next,ang:Math.atan2(to.y-S.sys.y,to.x-S.sys.x)};
 }
 function doJump(){
   const from=G.loc,to=S.jump.to,chain=S.jump.auto;
@@ -1104,7 +1171,7 @@ function bar(x,y,w,v,max,color,label){
 function drawHUD(){const W0=W,H0=H;W/=ui;H/=ui;cx.setTransform(DPR*ui,0,0,DPR*ui,0,0);try{hud();}finally{W=W0;H=H0;cx.setTransform(DPR,0,0,DPR,0,0);}}
 function hud(){
   // on touch screens the top button bar sits over the header and radar, so drop them below it
-  const me=S.me,sys=S.sys,st=me.st,pad=16,top=coarse.matches?54/ui:0;let tBottom=0;
+  const me=S.me,sys=S.sys,st=me.st,pad=16,touch=touchUI(),top=touch?60/ui:0;let tBottom=0;
   for(const p of sys.ports)edgeMarker(p.x,p.y,p.name,'rgba(225,231,242,.7)');
   if(sys.signal&&!G.collected.has(sys.id))edgeMarker(sys.signal.x,sys.signal.y,'Signal','#ffb547');
   if(S.target&&!S.target.dead)edgeMarker(S.target.x,S.target.y,S.target.name,hostileToPlayer(S.target)?'#ff6262':'#62d5ff');
@@ -1114,14 +1181,17 @@ function hud(){
   cx.font='500 12px "IBM Plex Sans Condensed",sans-serif';cx.fillStyle=facColor(sys);cx.fillText(facName(sys)+(isWanted(sys.faction)?'  · WANTED':''),pad,pad+36);
   cx.fillStyle='#8a96ae';cx.font='500 11px "IBM Plex Mono",monospace';cx.fillText(`DAY ${G.day}  ·  ${fmt(G.p.credits)} CR`,pad,pad+54);cx.restore();
   // status block
-  const wide=coarse.matches&&W>H&&W>=600,bw=Math.min(210,W*.42),bx=wide?(W-bw)/2:pad,by=H-pad-(coarse.matches&&!wide?150/ui:0)-92;
+  const wide=touch&&W>H&&W>=600,bw=Math.min(210,W*.42),bx=wide?(W-bw)/2:pad,by=H-pad-(touch&&!wide?172/ui:0)-92;
   // action prompts: on narrow screens they stack above the status block, on wide ones the
   // land/scan prompts sit centred above the ship
   const narrow=W<600,prompts=[];
   if(S.auto)prompts.push(S.auto.kind==='land'?`AUTOPILOT ▸ LANDING ON ${S.auto.p.name.toUpperCase()}`:`AUTOPILOT ▸ JUMP TO ${(G.gal.systems[G.route[0]]?.name||'').toUpperCase()}`);
   const centred=[];
-  if(!S.jump&&sys.ports.length){const p=sys.ports.reduce((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)-a.size<Math.hypot(b.x-me.x,b.y-me.y)-b.size?a:b);if(Math.hypot(p.x-me.x,p.y-me.y)<p.size+40)(narrow?prompts:centred).push(`[L] LAND ON ${p.name.toUpperCase()}`);}
-  if(sys.signal&&!G.collected.has(sys.id)&&Math.hypot(sys.signal.x-me.x,sys.signal.y-me.y)<110)(narrow?prompts:centred).push('[B] SCAN SIGNAL');
+  let canLand=false,canBoard=false;
+  if(!S.jump&&sys.ports.length){const p=sys.ports.reduce((a,b)=>Math.hypot(a.x-me.x,a.y-me.y)-a.size<Math.hypot(b.x-me.x,b.y-me.y)-b.size?a:b);if(Math.hypot(p.x-me.x,p.y-me.y)<p.size+40){canLand=true;(narrow?prompts:centred).push(kp('L',`LAND ON ${p.name.toUpperCase()}`));}}
+  if(sys.signal&&!G.collected.has(sys.id)&&Math.hypot(sys.signal.x-me.x,sys.signal.y-me.y)<110){canBoard=true;(narrow?prompts:centred).push(kp('B','SCAN SIGNAL'));}
+  if(S.ships.some(s=>s.disabled&&!s.boarded&&Math.hypot(s.x-me.x,s.y-me.y)<90))canBoard=true;
+  if(touch)setReady({l:canLand,j:!!G.route.length&&Math.hypot(me.x,me.y)>=JUMP_DIST&&!S.jump,b:canBoard},{g:!!S.auto,tab:!!(S.target&&!S.target.dead)});
   cx.fillStyle='#ffb547';cx.font='600 12px "Chakra Petch",sans-serif';cx.textAlign='left';
   prompts.forEach((t,i)=>cx.fillText(t,bx,by-14-(prompts.length-1-i)*18,W-pad*2));
   const promptTop=by-14-prompts.length*18;
@@ -1130,8 +1200,8 @@ function hud(){
   cx.fillStyle='#8a96ae';cx.font='500 10px "IBM Plex Mono",monospace';cx.textAlign='left';
   cx.fillText(`FUEL ${G.p.fuel}/${st.fuel}   CARGO ${cargoUsed()}/${st.cargo}t${st.racks?`   MSL ${G.p.ammo}`:''}`,bx,by+64);
   const nx=G.route.length?G.gal.systems[G.route[0]]:null;
-  if(nx){const ready=Math.hypot(me.x,me.y)>=JUMP_DIST;cx.fillStyle=ready?'#ffb547':'#8a96ae';cx.fillText(`NEXT ▸ ${nx.name.toUpperCase()}  ${ready?'[J] READY':'· CLEAR THE RING'}  (${G.route.length} jump${G.route.length>1?'s':''})`,bx,by+82);}
-  else{cx.fillStyle='#5d6880';cx.fillText(hints?'NO ROUTE · [M] MAP':'NO ROUTE',bx,by+82);}
+  if(nx){const ready=Math.hypot(me.x,me.y)>=JUMP_DIST;cx.fillStyle=ready?'#ffb547':'#8a96ae';cx.fillText(`NEXT ▸ ${nx.name.toUpperCase()}  ${ready?(touch?'JUMP READY':'[J] READY'):'· CLEAR THE RING'}  (${G.route.length} jump${G.route.length>1?'s':''})`,bx,by+82);}
+  else{cx.fillStyle='#5d6880';cx.fillText(hints?(touch?'NO ROUTE · TAP MAP':'NO ROUTE · [M] MAP'):'NO ROUTE',bx,by+82);}
   // radar
   const rr=Math.min(72,W*.16,H*.13),rx=W-pad-rr,ry=pad+rr+top,sc=rr/2200;
   cx.fillStyle='rgba(11,16,29,.75)';cx.strokeStyle='#243150';cx.lineWidth=1;cx.beginPath();cx.arc(rx,ry,rr,0,TAU);cx.fill();cx.stroke();
@@ -1148,7 +1218,7 @@ function hud(){
     const t=S.target,tw=Math.min(210,W*.42),tx=W-pad-tw,ty=ry+rr+18;
     cx.fillStyle=hostileToPlayer(t)?'#ff6262':t.disabled?'#8a96ae':'#62d5ff';cx.font='600 14px "Chakra Petch",sans-serif';cx.textAlign='left';cx.fillText(t.name,tx,ty+12,tw);
     cx.fillStyle='#8a96ae';cx.font='500 10px "IBM Plex Mono",monospace';
-    cx.fillText(`${Math.round(Math.hypot(t.x-me.x,t.y-me.y))} m  ·  ${t.disabled?(t.boarded?'STRIPPED':'DISABLED · [B] BOARD'):hostileToPlayer(t)?'HOSTILE':'NEUTRAL'}`,tx,ty+28);
+    cx.fillText(`${Math.round(Math.hypot(t.x-me.x,t.y-me.y))} m  ·  ${t.disabled?(t.boarded?'STRIPPED':`DISABLED · ${kp('B','BOARD')}`):hostileToPlayer(t)?'HOSTILE':'NEUTRAL'}`,tx,ty+28);
     bar(tx,ty+46,tw,t.shield,t.st.shield,'#62d5ff','');bar(tx,ty+62,tw,t.hull,t.st.hull,'#ffb547','');tBottom=ty+72;
   }
   // messages
@@ -1175,7 +1245,7 @@ function frame(now){
   requestAnimationFrame(frame);
   musicTick();
   if(mode!=='space'||S&&S.me.dead)engine(false);
-  if(document.body.dataset.mode!==mode)document.body.dataset.mode=mode;
+  if(document.body.dataset.mode!==mode){document.body.dataset.mode=mode;keepAwake(mode==='space'||mode==='map');if(mode!=='space')releaseStick();}
   const el=now-lastT;
   if(mode==='space'){
     if(el<1000/75)return;
@@ -1210,10 +1280,70 @@ function onKey(k){
 }
 document.querySelectorAll('[data-key]').forEach(b=>{
   const k=b.dataset.key;
-  b.addEventListener('pointerdown',e=>{e.preventDefault();if(!keys[k])onKey(k);keys[k]=true;});
-  for(const ev of ['pointerup','pointerleave','pointercancel'])b.addEventListener(ev,()=>{keys[k]=false;});
+  b.addEventListener('pointerdown',e=>{e.preventDefault();b.classList.add('down');if(!keys[k])onKey(k);keys[k]=true;});
+  for(const ev of ['pointerup','pointerleave','pointercancel'])b.addEventListener(ev,()=>{keys[k]=false;b.classList.remove('down');});
+  b.addEventListener('contextmenu',e=>e.preventDefault());
 });
-function pause(on){if(on){mode='paused';$('pause').hidden=false;$('resume').focus();}else{$('pause').hidden=true;mode='space';}}
+// Which controls to show follows the last input: a finger shows the touch layout, a key or
+// mouse press hides it again, so touchscreen laptops work both ways.
+function setInput(t){if(document.body.dataset.input===t)return;document.body.dataset.input=t;needsDraw=true;if(G&&!landEl.hidden)renderLand();}
+setInput(coarse.matches?'touch':'keys');
+addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.pointerType==='pen')setInput('touch');else if(e.pointerType==='mouse')setInput('keys');},true);
+addEventListener('keydown',e=>{if(e.target.tagName!=='INPUT')setInput('keys');},true);
+// thumbstick: the base jumps to wherever the thumb lands, the knob follows within its radius
+const stickEl=$('stick'),stickBase=stickEl.querySelector('.base'),stickKnob=stickEl.querySelector('.knob');
+let stick=null;
+function moveStick(e){
+  if(!stick||e.pointerId!==stick.id)return;
+  const dx=e.clientX-stick.ox,dy=e.clientY-stick.oy,R=48,k=Math.min(Math.hypot(dx,dy),R);
+  stick.a=Math.atan2(dy,dx);stick.mag=k/R;
+  stickKnob.style.transform=`translate(${Math.cos(stick.a)*k}px,${Math.sin(stick.a)*k}px)`;
+  stickEl.classList.toggle('go',stick.mag>.6);
+}
+function releaseStick(){stick=null;stickKnob.style.transform='';stickBase.style.left=stickBase.style.top='';stickEl.classList.remove('on','go');}
+stickEl.addEventListener('pointerdown',e=>{
+  e.preventDefault();if(stick)return;const r=stickEl.getBoundingClientRect();
+  stick={id:e.pointerId,ox:e.clientX,oy:e.clientY,a:0,mag:0};try{stickEl.setPointerCapture(e.pointerId);}catch(err){}
+  stickBase.style.left=`${e.clientX-r.left}px`;stickBase.style.top=`${e.clientY-r.top}px`;stickEl.classList.add('on');
+});
+stickEl.addEventListener('pointermove',moveStick);
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])stickEl.addEventListener(ev,e=>{if(stick&&e.pointerId===stick.id)releaseStick();});
+stickEl.addEventListener('contextmenu',e=>e.preventDefault());
+// Tap (or click) in flight: a ship becomes the target, a port starts the autopilot landing.
+let tap=null;
+cv.addEventListener('pointerdown',e=>{tap={x:e.clientX,y:e.clientY,id:e.pointerId};});
+cv.addEventListener('pointerup',e=>{
+  const t=tap;tap=null;
+  if(!t||t.id!==e.pointerId||Math.hypot(e.clientX-t.x,e.clientY-t.y)>14||mode!=='space'||!S||S.me.dead||S.jump)return;
+  const me=S.me,wx=me.x+(e.clientX-W/2)/Z,wy=me.y+(e.clientY-H/2)/Z,slop=(e.pointerType==='touch'?36:18)/Z;
+  let best=null,bd=1e9;
+  for(const s of S.ships){if(s.dead)continue;const d=Math.hypot(s.x-wx,s.y-wy)-s.size;if(d<slop&&d<bd){bd=d;best=s;}}
+  if(best){S.target=best;play('blip');buzz(10);return;}
+  for(const p of S.sys.ports)if(Math.hypot(p.x-wx,p.y-wy)<p.size+slop){
+    S.nav=p;S.auto={kind:'land',p};play('blip');buzz(10);msg(`Autopilot: landing on ${p.name}.`+tipK('Steer to take back control.','Move the stick to take back control.'));return;}
+});
+// light up the top-bar actions that would do something right now
+const topBtns={};for(const b of document.querySelectorAll('#touchTop [data-key]'))topBtns[b.dataset.key]=b;
+let readyKey='';
+function setReady(ready,on){
+  const key=JSON.stringify([ready,on]);if(key===readyKey)return;readyKey=key;
+  for(const k in ready)topBtns[k]?.classList.toggle('ready',!!ready[k]);
+  for(const k in on)topBtns[k]?.classList.toggle('on',!!on[k]);
+}
+// keep the screen awake while flying
+let wake=null,wakeBusy=false;
+async function keepAwake(on){
+  if(wakeBusy||!navigator.wakeLock)return;wakeBusy=true;
+  try{if(on&&!wake&&!document.hidden){wake=await navigator.wakeLock.request('screen');wake.addEventListener('release',()=>{wake=null;});}
+    else if(!on&&wake){const w=wake;wake=null;await w.release();}}catch(e){}
+  wakeBusy=false;
+}
+// full screen where the browser allows it (Android; iPhone Safari does not)
+const fsOK=!!(document.fullscreenEnabled&&document.documentElement.requestFullscreen);
+const fsLabel=()=>{for(const b of document.querySelectorAll('.fs-btn')){b.hidden=!fsOK;b.textContent=document.fullscreenElement?'Exit full screen':'Full screen';}};
+for(const b of document.querySelectorAll('.fs-btn'))b.onclick=()=>{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{});};
+document.addEventListener('fullscreenchange',()=>{fsLabel();resize();});fsLabel();
+function pause(on){releaseStick();for(const k in keys)keys[k]=false;if(on){mode='paused';$('pause').hidden=false;if(!touchUI())$('resume').focus();}else{$('pause').hidden=true;mode='space';}}
 $('resume').onclick=()=>pause(false);
 function setPref(k,v){pref[k]=v;try{localStorage.setItem('lanternreach-'+k,v);}catch(e){}applyPrefs();
   for(const b of document.querySelectorAll('.pref-btn'))b.textContent=PREF_LABEL[b.dataset.pref](pref[b.dataset.pref]);
@@ -1249,7 +1379,7 @@ function renderLand(){
     const news=G.events.filter(e=>live(e)&&G.news.has(e.id));
     const repTxt=f>=0?`${G.rep[f]>=10?'<span class="c-good">Respected</span>':G.rep[f]<0?'<span class="c-bad">Suspect</span>':'Clean'} (${G.rep[f]})`:'No authority here';
     html=`<p class="desc">${esc(port.desc)}</p>
-    ${hints&&G.day===0&&G.stats.jumps===0?`<div class="card" style="border-color:var(--amber)"><h3 class="c-amber">First flight</h3><p class="desc muted">Check the Trade tab for cheap goods, or take a delivery from Jobs. Open the map (M) once in space to plot a route, fly outside the dashed ring, and press J. Exploring new systems earns survey data you can sell at any port.</p></div>`:''}
+    ${hints&&G.day===0&&G.stats.jumps===0?`<div class="card" style="border-color:var(--amber)"><h3 class="c-amber">First flight</h3><p class="desc muted">Check the Trade tab for cheap goods, or take a delivery from Jobs. ${touchUI()?'Once in space, tap MAP to plot a route, fly outside the dashed ring, and tap JUMP. Tapping a port flies you in to land.':'Open the map (M) once in space to plot a route, fly outside the dashed ring, and press J.'} Exploring new systems earns survey data you can sell at any port.</p></div>`:''}
     <div class="grid2">
       <div class="card"><h3>Services</h3>
         <div class="row"><span>Refuel to ${st.fuel} jumps</span><button class="btn sm" data-act="refuel" ${fuelCost===0||G.p.credits<fuelCost?'disabled':''}>${fuelCost?fmt(fuelCost)+' cr':'Full'}</button></div>
@@ -1461,7 +1591,7 @@ mc.addEventListener('pointermove',e=>{if(touches.has(e.pointerId))touches.set(e.
   if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.hypot(dx,dy)>5)drag.moved=true;if(drag.moved){mv.x=drag.mx-dx/mv.z;mv.y=drag.my-dy/mv.z;drawMap();}});
 mc.addEventListener('pointerup',e=>{
   touches.delete(e.pointerId);if(pinch){if(touches.size<2)pinch=null;drag=null;return;}
-  if(drag&&!drag.moved){const r=mc.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;let best=null,bd=coarse.matches?28:18;
+  if(drag&&!drag.moved){const r=mc.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;let best=null,bd=touchUI()||e.pointerType==='touch'?30:18;
     for(const id of mapK.known){const s=G.gal.systems[id],[x,y]=m2s(s.x,s.y),d=Math.hypot(x-px,y-py);if(d<bd){bd=d;best=id;}}
     mapSel=best;drawMap();renderMapInfo();}
   drag=null;});
