@@ -165,6 +165,17 @@ html,body{overscroll-behavior:none}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 #toast b{color:var(--amber);font-weight:600}
 body[data-mode="space"][data-input="touch"] #toast{top:calc(max(8px,env(safe-area-inset-top,0px)) + 52px)}
+/* Comms: hails with choices */
+#comms{box-sizing:border-box;position:fixed;left:50%;top:calc(max(8px,env(safe-area-inset-top,0px)) + 64px);transform:translateX(-50%);z-index:6;width:min(460px,calc(100% - 24px));display:flex;flex-direction:column;gap:6px;
+  background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--red);padding:12px 14px;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+#comms .who{font-family:var(--f-display);font-weight:600;font-size:calc(17px * var(--ui))}
+#comms .text{margin:0;font-size:calc(15px * var(--ui))}
+#comms .choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+#comms .choices .btn{flex:1 1 auto}
+#comms kbd{margin-right:6px}
+body:not([data-mode="space"]) #comms{display:none}
+@media (max-width:480px){#comms .choices{flex-direction:column}}
+#touch .pad.r .wing{grid-column:1/3;height:40px;font-size:12px;color:var(--green);border-color:var(--green)}
 /* Daily scorecard */
 .score-total{font-family:var(--f-display);font-size:calc(44px * var(--ui));font-weight:700;color:var(--amber);line-height:1}
 .share-text{margin:0;padding:10px 12px;border:1px solid var(--line);background:var(--void);white-space:pre-wrap;font-size:calc(13px * var(--ui))}
@@ -190,7 +201,7 @@ body[data-mode="photo"] #game{cursor:grab}
 </div>
 <div id="touch" aria-hidden="true">
   <div id="stick"><div class="base"><div class="knob"></div></div><div class="lbl">AIM · PUSH TO THRUST</div></div>
-  <div class="pad r"><button data-key="s">RETRO</button><button data-key="f">MSL</button><button class="fire" data-key=" ">FIRE</button></div>
+  <div class="pad r"><button class="wing" data-key="v" hidden>WING: ATTACK</button><button data-key="s">RETRO</button><button data-key="f">MSL</button><button class="fire" data-key=" ">FIRE</button></div>
 </div>
 
 <div id="title" class="overlay">
@@ -221,6 +232,8 @@ body[data-mode="photo"] #game{cursor:grab}
         <li><b>Tap a port</b> to autopilot in and land</li>
         <li><b>AUTO</b> land, or fly your route and jump</li>
         <li><b>MAP</b> plot a route; <b>JUMP</b> once past the ring</li>
+        <li><b>Hails</b> tap a reply; the game slows while you choose</li>
+        <li><b>WING</b> switch your wingman between attack and stay close</li>
         <li><b>☰</b> pause, settings and help</li>
       </ul>
       <div class="keys keys-only" aria-label="Controls">
@@ -236,6 +249,7 @@ body[data-mode="photo"] #game{cursor:grab}
         <div><kbd>G</kbd> autopilot: land, or fly out and jump</div>
         <div><kbd>Esc</kbd> pause and controls</div>
         <div><kbd>C</kbd> photo mode</div>
+        <div><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> answer a hail · <kbd>V</kbd> wingman orders</div>
         <div>Click a ship to target it, a port to autopilot there</div>
         <div>The ◎ marker on your target shows where to aim</div>
       </div>
@@ -269,12 +283,14 @@ body[data-mode="photo"] #game{cursor:grab}
         <li><b>Tap a port</b> to autopilot in and land</li>
         <li><b>AUTO</b> land, or fly your route and jump</li>
         <li><b>MAP</b> plot a route; <b>JUMP</b> once past the ring</li>
+        <li><b>Hails</b> tap a reply; the game slows while you choose</li>
+        <li><b>WING</b> switch your wingman between attack and stay close</li>
         <li><b>☰</b> pause, settings and help</li>
       </ul>
       <div class="keys keys-only">
         <div><kbd>W</kbd> thrust</div><div><kbd>A</kbd><kbd>D</kbd> turn</div><div><kbd>S</kbd> turn to retro</div>
         <div><kbd>Space</kbd> guns</div><div><kbd>F</kbd> seeker missile</div><div><kbd>Tab</kbd> cycle target</div>
-        <div><kbd>L</kbd> land</div><div><kbd>M</kbd> map</div><div><kbd>J</kbd> jump</div><div><kbd>B</kbd> board or scan</div><div><kbd>G</kbd> autopilot</div><div><kbd>C</kbd> photo mode</div>
+        <div><kbd>L</kbd> land</div><div><kbd>M</kbd> map</div><div><kbd>J</kbd> jump</div><div><kbd>B</kbd> board or scan</div><div><kbd>G</kbd> autopilot</div><div><kbd>C</kbd> photo mode</div><div><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> answer a hail</div><div><kbd>V</kbd> wingman orders</div>
       </div>
       <p class="desc muted">To jump, plot a route on the map, then fly outside the dashed jump ring and press <span class="keys-only">J</span><span class="touch-only">JUMP</span>. Each jump burns one unit of fuel and takes a day. Ships drop to a disabled drift when their hull is badly damaged; fly alongside slowly and press <span class="keys-only">B</span><span class="touch-only">BOARD</span> to board. Signals on your radar pulse amber: fly to them and press <span class="keys-only">B</span><span class="touch-only">BOARD</span> to scan.</p>
       <div class="row" style="justify-content:flex-start"><button class="btn sm pref-btn" type="button" data-pref="hints"></button><button class="btn sm pref-btn" type="button" data-pref="sound"></button><button class="btn sm pref-btn" type="button" data-pref="music"></button><button class="btn sm pref-btn" type="button" data-pref="text"></button><button class="btn sm pref-btn" type="button" data-pref="speed"></button><button class="btn sm pref-btn" type="button" data-pref="aim"></button><button class="btn sm pref-btn touch-only" type="button" data-pref="haptics"></button><button class="btn sm fs-btn touch-only" type="button">Full screen</button></div>
@@ -302,6 +318,8 @@ body[data-mode="photo"] #game{cursor:grab}
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
+
+<div id="comms" hidden role="dialog" aria-label="Incoming hail"><div class="eyebrow">Incoming hail</div><div class="who"></div><p class="text"></p><div class="choices"></div></div>
 
 <div id="dead" class="overlay" hidden>
   <div class="dock title-dock">
@@ -396,7 +414,9 @@ const OUTFITS=[
   {id:'shield',name:'Shield Capacitor',type:'mod',price:9500,tech:2,shield:65,desc:'+65 shield.'},
   {id:'engine',name:'Drive Tuning',type:'mod',price:15000,tech:3,speed:35,accel:45,desc:'+35 top speed, +45 acceleration.'},
   {id:'scanner',name:'Deep Scanner',type:'mod',price:13000,tech:3,scan:1,desc:'Charts systems two jumps out from anywhere you know.'},
-  {id:'regen',name:'Shield Regenerator',type:'mod',price:17000,tech:4,regen:5,desc:'+5 shield per second.'}];
+  {id:'regen',name:'Shield Regenerator',type:'mod',price:17000,tech:4,regen:5,desc:'+5 shield per second.'},
+  // never sold (tech 9): taken from a defeated nemesis
+  {id:'fang',name:'Corsair Fang',type:'gun',price:30000,tech:9,dmg:15,rate:.2,speed:950,life:.7,color:'#ff3d6e',desc:'Taken from your nemesis. Fast, hard-hitting, one of a kind.'}];
 const OUT=Object.fromEntries(OUTFITS.map(o=>[o.id,o]));
 const MISSILE={dmg:46,speed:520,life:4.2,color:'#ff9a4a'};
 const SYL_A=['al','ve','ra','ko','ther','is','an','mor','dra','sel','ny','qua','ost','bel','cy','fen','ga','hal','ix','ju','lor','mae','nar','ori','pel','rhu','sta','tor','ul','vash','wy','zen','cor','eth','lys','tha','kel','sab','tyr','ar'];
@@ -508,17 +528,19 @@ function newGame(seed){
   G={gal,seed,day:0,loc:gal.home,port:gal.homePort,p:{hullId:'skiff',outfits:['laser'],ammo:0,credits:9000,fuel:3,hull:70,cargo:{}},
     visited:new Set([gal.home]),charted:new Set(),collected:new Set(),surveyVal:0,missions:[],done:new Set(),rep:Object.fromEntries(gal.factions.map(f=>[f.id,0])),
     stats:{kills:0,jumps:0,boarded:0,jobs:0,bounties:0,rescued:0},route:[],msgs:[],ledger:{},log:[],events:[],news:new Set(),suppress:{},
-    daily:null,miles:[],flags:{}};
+    daily:null,miles:[],flags:{},crew:null,crewOrder:'attack',nemesis:null};
+  G.nemesis=makeNemesis();
   const s=gal.systems[gal.home];logEv(`Took out a charter at ${s.ports[gal.homePort].name}, ${s.name}.`);
 }
-function serialize(){return{v:2,daily:G.daily,miles:G.miles,flags:G.flags,seed:G.seed,day:G.day,loc:G.loc,port:G.port,p:G.p,visited:[...G.visited],charted:[...G.charted],collected:[...G.collected],surveyVal:G.surveyVal,missions:G.missions,done:[...G.done],rep:G.rep,stats:G.stats,route:G.route,
+function serialize(){return{v:2,daily:G.daily,miles:G.miles,flags:G.flags,crew:G.crew,crewOrder:G.crewOrder,nemesis:G.nemesis,seed:G.seed,day:G.day,loc:G.loc,port:G.port,p:G.p,visited:[...G.visited],charted:[...G.charted],collected:[...G.collected],surveyVal:G.surveyVal,missions:G.missions,done:[...G.done],rep:G.rep,stats:G.stats,route:G.route,
   ledger:G.ledger,log:G.log,events:G.events,news:[...G.news].filter(id=>G.events.some(e=>e.id===id)),suppress:G.suppress};}
 function restore(d){
   const gal=genGalaxy(d.seed);
   G={gal,seed:d.seed,day:d.day,loc:d.loc,port:d.port,p:d.p,visited:new Set(d.visited),charted:new Set(d.charted),collected:new Set(d.collected),surveyVal:d.surveyVal,missions:d.missions,done:new Set(d.done),rep:d.rep,stats:d.stats,route:d.route||[],msgs:[],
     ledger:d.ledger||{},log:d.log||[],events:d.events||[],news:new Set(d.news||[]),suppress:d.suppress||{},
     // added in save v2; older saves get empty defaults
-    daily:d.daily||null,miles:d.miles||[],flags:d.flags||{}};
+    daily:d.daily||null,miles:d.miles||[],flags:d.flags||{},crew:d.crew||null,crewOrder:d.crewOrder||'attack',nemesis:d.nemesis||null};
+  if(!G.nemesis)G.nemesis=makeNemesis();
 }
 function save(){lastSave=JSON.stringify(serialize());try{localStorage.setItem(SAVE_KEY,lastSave);}catch(e){}}
 function readSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
@@ -669,7 +691,10 @@ const MILESTONES=[
   {id:'upgrade',name:'Moving up',desc:'Buy a new ship',test:()=>G.p.hullId!=='skiff'},
   {id:'bastion',name:'Flagship',desc:'Own a Bastion Cruiser',test:()=>G.p.hullId==='bastion'},
   {id:'photo',name:'Shutterbug',desc:'Save a photo',test:()=>!!G.flags.photo},
-  {id:'daily',name:'Filed on time',desc:'File a daily galaxy charter',test:()=>!!G.flags.daily}];
+  {id:'daily',name:'Filed on time',desc:'File a daily galaxy charter',test:()=>!!G.flags.daily},
+  {id:'escort',name:'Safe passage',desc:'Complete an escort job',test:()=>(G.stats.escorts||0)>=1},
+  {id:'talk',name:'Silver tongue',desc:'Bluff a pirate into leaving',test:()=>!!G.flags.bluffed},
+  {id:'nemesis',name:'Settled the score',desc:'Defeat your nemesis',test:()=>!!G.nemesis?.defeated}];
 const MILES_KEY='lanternreach-miles';
 function lifetimeMiles(){try{return new Set(JSON.parse(localStorage.getItem(MILES_KEY)||'[]'));}catch(e){return new Set();}}
 function checkMilestones(){
@@ -752,10 +777,10 @@ function learnNews(){
     G.news.add(e.id);msg(`News: ${e.title}.`);logEv(`Heard news: ${e.title}.`);}
 }
 const contraHeld=f=>Object.keys(G.p.cargo).filter(g=>banned(f,g));
-function inspect(f,who){
+function inspect(f,who,pen=6){
   const bad=contraHeld(f);if(!bad.length)return;
   const F=G.gal.factions[f],lost=bad.map(g=>`${G.p.cargo[g]}t ${GOODS.find(x=>x.id===g).name}`).join(', '),was=isWanted(f);
-  for(const g of bad)delete G.p.cargo[g];G.rep[f]-=6;
+  for(const g of bad)delete G.p.cargo[g];G.rep[f]-=pen;
   msg(`${who} found contraband: ${lost} confiscated.`,'bad');logEv(`Caught smuggling by the ${F.name}: lost ${lost}.`);
   if(!was&&isWanted(f))msg(`You are now wanted by the ${F.name}.`,'bad');
 }
@@ -789,16 +814,21 @@ function availableMissions(sys,port){
     const id=`${sys.id}.${port.i}.${G.day}.${i}`;
     const t=r(),issuer=sys.faction;
     let m=null;
-    if(t<.42){
+    if(t<.36){
       const c=within(1,5,s=>s.ports.length);if(!c.length)continue;
       const dest=pick(r,c),ds=G.gal.systems[dest],dp=pick(r,ds.ports),d=dist.get(dest),g=pick(r,LEGAL),tons=rint(r,3,10+d*3);
       m={type:'cargo',dest,destPort:dp.i,good:g.name,tons,reward:Math.round((600+d*tons*75)*(1+ds.danger*.5)/10)*10,deadline:G.day+d*2+rint(r,1,3),
         title:`Deliver ${tons}t of ${g.name}`,desc:`To ${dp.name} in the ${ds.name} system, ${d} jump${d>1?'s':''} away.`};
-    }else if(t<.62){
+    }else if(t<.52){
       const c=within(1,4,s=>s.ports.length);if(!c.length)continue;
       const dest=pick(r,c),ds=G.gal.systems[dest],dp=pick(r,ds.ports),d=dist.get(dest);
       m={type:'passenger',dest,destPort:dp.i,tons:2,reward:Math.round((900+d*800)/10)*10,deadline:G.day+d+rint(r,1,2),
         title:`Passage for ${pick(r,['a surveyor','two engineers','a courier','a family of three','a magistrate','a medic'])}`,desc:`To ${dp.name}, ${ds.name}. Tight schedule: ${d} jump${d>1?'s':''} away. Takes 2t of space.`};
+    }else if(t<.64){
+      const c=within(1,2,s=>s.ports.length);if(!c.length)continue;
+      const dest=pick(r,c),ds=G.gal.systems[dest],dp=pick(r,ds.ports),d=dist.get(dest),nm=pick(r,['Patience','Old Faithful','Long Haul','Marigold','Second Wind','Ledger','Slow Tide','Bramble']);
+      m={type:'escort',dest,destPort:dp.i,escort:{name:nm,hull:HULL.hauler.hull},reward:Math.round((1800+d*1400)*(1+ds.danger)/10)*10,deadline:G.day+d+2,
+        title:`Escort the ${nm}`,desc:`An Ox Hauler bound for ${dp.name}, ${ds.name}, ${d} jump${d>1?'s':''} away. Stay with it; pirates will come.`};
     }else if(t<.82){
       const c=within(1,3,s=>s.danger>.35);if(!c.length)continue;
       const dest=pick(r,c),ds=G.gal.systems[dest],d=dist.get(dest),who=`${pick(r,['Red','Hollow','Lame','Quiet','Black','Grinning'])} ${genName(r)}`;
@@ -848,6 +878,7 @@ function stepContract(m){
   msg(`Contract stage done. Next stop: ${G.gal.systems[m.dest].name}.`,'good');logEv(`${m.title}: stage done, next ${G.gal.systems[m.dest].name}.`);
 }
 function acceptMission(m){
+  if(m.type==='escort'&&G.missions.some(x=>x.type==='escort')){msg('One escort job at a time.','bad');return;}
   if(m.tons&&cargoUsed()+m.tons>stats().cargo){msg('Not enough hold space for that job.','bad');return;}
   G.missions.push(m);G.done.add(m.id);
   chartTo(m.dest);
@@ -939,6 +970,12 @@ function enterSystem(sysId,from,atPort){
   for(const m of [...G.missions])if(m.type==='survey'&&m.dest===sysId)payMission(m,'Survey filed');
   for(const m of [...G.missions])if(m.type==='contract'&&m.destPort==null&&m.dest===sysId)stepContract(m);
   if(from!=null)burst(me.x,me.y,'#bfe6ff',26,260);
+  closeComms();
+  const em=G.missions.find(m=>m.type==='escort');
+  if(em&&em.escort.hull>0){spawnAlly('escort',em);const n=1+(dangerOf(sys)>.4?1:0),k=1+(dangerOf(sys)>.6?1:0);S.waves=[];for(let i=0;i<n;i++)S.waves.push({t:6+Math.random()*6+i*(15+Math.random()*10),n:k});}
+  if(G.crew)spawnAlly('wing');
+  const N=G.nemesis;
+  if(from!=null&&N&&!N.defeated&&G.day>=N.nextDay&&dangerOf(sys)>.25){const s=spawnNPC('pirate',{nemesis:true});s.ai.tgt=me;N.met=true;N.lastSys=sys.id;N.nextDay=G.day+rint(Math.random,4,8);S.tauntT=2.5;msg(`${N.name} is in the system.`,'bad');}
   // rescue pods: sometimes an escape pod is adrift when you arrive
   if(from!=null&&Math.random()<.14+sys.traffic*.08){
     const a=Math.random()*TAU,d=600+Math.random()*700,pod={kind:'pod',x:Math.cos(a)*d,y:Math.sin(a)*d,r:9,life:90,bait:Math.random()<.2,spin:Math.random()*TAU};
@@ -954,16 +991,17 @@ function spawnNPC(kind,o={}){
   else if(kind==='patrol'){hullId=R()<.25?'warden':'kestrel';outfits=hullId==='warden'?['laser','laser','ion','rail','armor','shield']:['laser','laser','ion'];name=`${G.gal.factions[sys.faction].name.split(' ').pop()} Patrol`;color=G.gal.factions[sys.faction].color;}
   else{const tier=dangerOf(sys)+R()*.45;hullId=tier>1.05?'warden':tier>.75?'kestrel':tier>.45?'courier':'skiff';
     outfits={skiff:['laser'],courier:['ion'],kestrel:['laser','laser','ion'],warden:['laser','rail','ion','laser','rack']}[hullId];name=`Pirate ${HULL[hullId].name}`;color='#ff6b5a';}
+  if(o.nemesis){const T=NEM_TIERS.at(G.nemesis.tier);hullId=T.h;outfits=T.o;name=G.nemesis.name;color='#ff3d6e';}
   if(o.bounty){hullId=sys.danger>.6?'warden':'kestrel';outfits=hullId==='warden'?['rail','laser','laser','ion','rack','armor','shield']:['laser','laser','rail','armor','shield'];name=o.bounty.target;color='#ff3d6e';}
-  const s=makeShip(hullId,outfits,{name,color,ai:{kind,faction:sys.faction,tgt:null,retarget:0,goal:null},bountyId:o.bounty?.id,canFlee:o.bounty?(o.bounty.fled||0)<2:true});
-  const fromPort=sys.ports.length&&kind!=='pirate'&&R()<.45&&!o.bounty;
-  if(o.initial&&!o.bounty){const a=R()*TAU,d=300+R()*1100;s.x=Math.cos(a)*d;s.y=Math.sin(a)*d;s.a=R()*TAU;}
+  const s=makeShip(hullId,outfits,{name,color,ai:{kind,faction:sys.faction,tgt:null,retarget:0,goal:null},bountyId:o.bounty?.id,canFlee:o.bounty?(o.bounty.fled||0)<2:o.nemesis?G.nemesis.escapes<3:true,nemesis:!!o.nemesis,willHail:kind==='pirate'&&!o.bounty&&!o.nemesis&&R()<.5});
+  const special=o.bounty||o.nemesis,fromPort=sys.ports.length&&kind!=='pirate'&&R()<.45&&!special;
+  if(o.initial&&!special){const a=R()*TAU,d=300+R()*1100;s.x=Math.cos(a)*d;s.y=Math.sin(a)*d;s.a=R()*TAU;}
   else if(fromPort){const p=pick(R,sys.ports);s.x=p.x;s.y=p.y;s.a=R()*TAU;s.vx=Math.cos(s.a)*50;s.vy=Math.sin(s.a)*50;}
-  else{const a=o.bounty?Math.atan2(S.me.y,S.me.x)+(R()-.5):R()*TAU,d=o.bounty?700:1450;s.x=Math.cos(a)*d;s.y=Math.sin(a)*d;s.a=a+Math.PI;s.vx=Math.cos(s.a)*s.st.speed*.7;s.vy=Math.sin(s.a)*s.st.speed*.7;if(!o.bounty)burst(s.x,s.y,'#bfe6ff',14,200);}
+  else{const a=special?Math.atan2(S.me.y,S.me.x)+(R()-.5):R()*TAU,d=special?700:1450;s.x=Math.cos(a)*d;s.y=Math.sin(a)*d;s.a=a+Math.PI;s.vx=Math.cos(s.a)*s.st.speed*.7;s.vy=Math.sin(s.a)*s.st.speed*.7;if(!special)burst(s.x,s.y,'#bfe6ff',14,200);}
   S.ships.push(s);return s;
 }
 const ships=()=>S.me.dead||S.jump?S.ships:[...S.ships,S.me];
-function hostileToPlayer(s){if(s.dead||s.disabled)return false;const k=s.ai.kind;return k==='pirate'||s.hostile||(k==='patrol'&&isWanted(s.ai.faction));}
+function hostileToPlayer(s){if(s.dead||s.disabled||s.spared||s.ally)return false;const k=s.ai.kind;return k==='pirate'||s.hostile||(k==='patrol'&&isWanted(s.ai.faction));}
 function wantsToAttack(a,b){if(b.player)return hostileToPlayer(a);if(a.ai.kind==='pirate')return b.ai.kind!=='pirate'&&!b.disabled;if(a.ai.kind==='patrol')return b.ai.kind==='pirate';return false;}
 function chooseTarget(s){let best=null,bd=1700;for(const o of ships()){if(o===s||o.dead||!wantsToAttack(s,o))continue;let d=Math.hypot(o.x-s.x,o.y-s.y);if(o.player)d*=.7;if(d<bd){bd=d;best=o;}}return best;}
 function steer(s,want,dt){const d=angDiff(s.a,want),m=s.st.turn*dt;s.a+=clamp(d,-m,m);return Math.abs(d);}
@@ -982,7 +1020,7 @@ const ASSIST_CONE=.21;
 function fireGuns(s){
   const n=s.st.guns.length,ca=Math.cos(s.a),sa=Math.sin(s.a);
   const at=s.player&&aimAssist()&&S.target&&!S.target.dead?S.target:null;
-  s.st.guns.forEach((o,i)=>{if((s.cd[i]||0)>0)return;s.cd[i]=o.rate*(s.player?1:1.25);
+  s.st.guns.forEach((o,i)=>{if((s.cd[i]||0)>0)return;s.cd[i]=o.rate*(s.player||s.angry?1:1.25);
     const off=(i-(n-1)/2)*4,sp=(Math.random()-.5)*.03;let dir=s.a;
     if(at){const L=leadAim(s,at,o.speed);if(Math.abs(angDiff(s.a,L.a))<ASSIST_CONE)dir=L.a;}
     S.shots.push({x:s.x+ca*s.size*1.1-sa*off,y:s.y+sa*s.size*1.1+ca*off,vx:s.vx+Math.cos(dir+sp)*o.speed,vy:s.vy+Math.sin(dir+sp)*o.speed,life:o.life,o,owner:s});play(o.id,s.x,s.y);});
@@ -999,24 +1037,73 @@ function provoke(s){
   if(s.hostile)return;s.hostile=true;
   if(s.ai.kind!=='pirate'&&S.sys.faction>=0){const f=S.sys.faction,was=isWanted(f);G.rep[f]-=4;if(!was&&isWanted(f))msg(`You are now wanted by the ${G.gal.factions[f].name}.`,'bad');}
 }
+// ---------- comms ----------
+// A hail opens a small dialog of choices. The game runs at 20% speed while it is open.
+function comms(o){
+  const el=$('comms');S.comms=o;
+  el.querySelector('.who').textContent=o.who;el.querySelector('.who').style.color=o.color||'var(--ink)';el.style.borderLeftColor=o.color||'var(--line-hi)';
+  el.querySelector('.text').textContent=o.text;
+  el.querySelector('.choices').innerHTML=o.choices.map((c,i)=>`<button class="btn${i===0?' primary':''}" type="button" data-ci="${i}" ${c[2]?'disabled':''}><kbd class="keys-only">${i+1}</kbd>${esc(c[0])}</button>`).join('');
+  el.hidden=false;play('blip');buzz(15);
+}
+function closeComms(){if(S)S.comms=null;$('comms').hidden=true;}
+function choose(i){if(!S||!S.comms)return;const c=S.comms.choices[i];if(!c||c[2])return;const o=S.comms;closeComms();c[1](o);}
+$('comms').addEventListener('click',e=>{const b=e.target.closest('[data-ci]');if(b&&!b.disabled)choose(+b.dataset.ci);});
+const tierOf=id=>HULLS.findIndex(h=>h.id===id);
+function spare(s,text){
+  s.spared=true;s.ai.tgt=null;const a=Math.atan2(s.y-S.me.y,s.x-S.me.x);s.ai.goal={type:'jump',x:s.x+Math.cos(a)*1800,y:s.y+Math.sin(a)*1800};
+  if(S.target===s)S.target=null;msg(text,'good');
+}
+function pirateHail(s){
+  const cargoVal=Object.entries(G.p.cargo).reduce((a,[g,n])=>a+n*GOODS.find(x=>x.id===g).base,0),hasCargo=cargoVal>0;
+  const demand=clamp(Math.round((G.p.credits*.15+cargoVal*.3)/100)*100,500,20000),canPay=G.p.credits>=demand;
+  const odds=clamp(.3+(tierOf(G.p.hullId)-tierOf(s.hullId))*.15+Math.min(.2,G.stats.kills/250),.05,.9);
+  const pay=canPay||!hasCargo?[`Pay ${fmt(demand)} cr`,()=>{G.p.credits-=demand;logEv(`Paid off a pirate: ${fmt(demand)} cr.`);spare(s,`You pay ${fmt(demand)} cr. ${s.name} peels away.`);},!canPay]
+    :['Dump your cargo',()=>{G.p.cargo={};logEv('Dumped the hold to buy off a pirate.');spare(s,`You vent the hold. ${s.name} goes after the cargo.`);}];
+  const line=pick(Math.random,[`Nice ship. Be a shame to crack it open. ${fmt(demand)} cr and you fly away.`,`Toll road, Captain. ${fmt(demand)} cr, or we take it out of your hull.`,`Cut your engines. ${fmt(demand)} cr and nobody gets hurt.`]);
+  comms({ship:s,who:s.name,color:'#ff6b5a',text:`"${line}"${!canPay&&hasCargo?' Short of credits, they will take your cargo instead.':''}`,choices:[pay,
+    [`Bluff (${Math.round(odds*100)}% chance)`,()=>{if(Math.random()<odds){G.flags.bluffed=true;logEv(`Bluffed ${s.name} into leaving.`);spare(s,`"...Not worth it." ${s.name} breaks off.`);}else{s.shield=s.st.shield;s.angry=true;msg(`${s.name} isn't buying it. Shields up, guns hot.`,'bad');}}],
+    ['Fight',()=>{msg('Channel closed. Weapons free.');}]]});
+}
+function patrolHail(s){
+  const f=S.sys.faction,F=G.gal.factions[f],bad=contraHeld(f),val=bad.reduce((a,g)=>a+G.p.cargo[g]*GOODS.find(x=>x.id===g).base,0);
+  const bribe=Math.max(500,Math.round(val/100)*100),odds=clamp(1-F.law,.05,.95),names=bad.map(g=>GOODS.find(x=>x.id===g).name).join(' and ');
+  comms({ship:s,who:s.name,color:F.color,text:`"${F.name} patrol. Our scan shows ${names} in your hold, banned in this space. Heave to for inspection."`,choices:[
+    ['Submit',()=>inspect(f,`${s.name} inspection`,3)],
+    [`Bribe ${fmt(bribe)} cr (${Math.round(odds*100)}% chance)`,()=>{
+      if(Math.random()<odds){G.p.credits-=bribe;logEv(`Bribed a ${F.name} patrol: ${fmt(bribe)} cr.`);msg('Credits change hands. "Move along."','good');}
+      else{G.p.credits=Math.max(0,G.p.credits-bribe);msg(`Bribery attempt refused: fined ${fmt(bribe)} cr.`,'bad');inspect(f,s.name,10);}},G.p.credits<bribe],
+    ['Run',()=>{s.hostile=true;const was=isWanted(f);G.rep[f]=Math.min(G.rep[f],-16);if(!was)msg(`You run. The ${F.name} marks you wanted.`,'bad');logEv(`Ran from a ${F.name} patrol.`);}]]});
+}
 function damage(s,o,shooter){
   if(s.dead)return;
   const d=o.dmg*(o.shieldMul||1);
   if(s.shield>=d)s.shield-=d;else{const frac=(d-s.shield)/d;s.shield=0;s.hull-=o.dmg*(o.hullMul||1)*frac;}
   s.hitT=.12;s.lastHit=S.t;play(s.shield>0?'shield':s.player?'hurt':'hull',s.x,s.y);if(s.player)buzz(s.shield>0?12:35);
-  if(shooter&&shooter.player&&!s.player)provoke(s);
+  if(shooter&&shooter.player&&!s.player&&!s.ally)provoke(s);
+  if(shooter&&shooter.player&&S.comms&&S.comms.ship===s){closeComms();msg('Channel closed. Weapons free.');}
   // whoever shoots you becomes your target, unless you already have a hostile one picked
   if(s.player&&shooter&&!shooter.player&&!shooter.dead&&(!S.target||S.target.dead||!hostileToPlayer(S.target))){S.target=shooter;play('blip');}
   if(s.bountyId&&shooter&&shooter.player&&!s.called){s.called=true;msg(`${s.name} calls in backup!`,'bad');for(let i=dangerOf(S.sys)>.6?2:1;i>0;i--){const w=spawnNPC('pirate');w.ai.tgt=S.me;}}
-  if(!s.player&&shooter&&!shooter.player&&s.ai.kind==='trader')s.fleeFrom=shooter;
+  if(!s.player&&shooter&&!shooter.player&&s.ai.kind==='trader'){s.fleeFrom=shooter;
+    // a merchant under pirate attack calls for help
+    if(shooter.ai.kind==='pirate'&&!s.askedHelp&&!S.me.dead&&Math.hypot(s.x-S.me.x,s.y-S.me.y)<1400){s.askedHelp=true;s.helpFrom=shooter;msg(`${s.name}: "Pirates on us! Anyone out there?"`,'bad');}}
   if(s.hull<=0)destroy(s,shooter);
-  else if(!s.player&&!s.disabled&&s.hull<s.st.hull*.22){s.disabled=true;s.shield=0;play('disable',s.x,s.y);if(Math.hypot(s.x-S.me.x,s.y-S.me.y)<1600)msg(`${s.name} disabled.`);}
+  else if(!s.player&&!s.ally&&!s.disabled&&s.hull<s.st.hull*.22){s.disabled=true;s.shield=0;play('disable',s.x,s.y);if(Math.hypot(s.x-S.me.x,s.y-S.me.y)<1600)msg(`${s.name} disabled.`);}
 }
 function destroy(s,shooter){
   s.dead=true;explode(s);
   if(s.player){G.p.hull=0;S.deadT=2.2;buzz([90,50,200]);return;}
   if(S.target===s)S.target=null;
   if(s.bountyId){const m=G.missions.find(x=>x.id===s.bountyId);if(m){G.stats.bounties=(G.stats.bounties||0)+1;payMission(m,'Bounty claimed');}}
+  if(s.nemesis)nemesisDefeated(s);
+  if(s.escortId){const m=G.missions.find(x=>x.id===s.escortId);if(m){G.missions=G.missions.filter(x=>x!==m);if(m.issuer>=0)G.rep[m.issuer]=(G.rep[m.issuer]||0)-3;msg(`The ${s.name} is lost. Escort job failed.`,'bad');logEv(`Failed: ${m.title}. The hauler was destroyed.`);}}
+  if(s.crew&&G.crew){msg(`${G.crew.name} is gone. Your wingman's ship broke apart.`,'bad');logEv(`Lost wingman ${G.crew.name} in ${S.sys.name}.`);G.crew=null;}
+  // saving a merchant who called for help
+  if(s.ai.kind==='pirate'&&shooter&&(shooter.player||shooter.ally))for(const t of S.ships)if(t.helpFrom===s&&!t.dead&&!t.thanked){
+    t.thanked=true;const cr=Math.round((500+Math.random()*1000)/10)*10,f=S.sys.faction;G.p.credits+=cr;if(f>=0)G.rep[f]=Math.min(60,(G.rep[f]||0)+2);
+    msg(`${t.name}: "We owe you one." +${fmt(cr)} cr`,'good');logEv(`Saved a merchant from pirates in ${S.sys.name}, +${fmt(cr)} cr.`);}
+  if(shooter&&shooter.ally&&s.ai.kind==='pirate'){const b=Math.round((300+HULL[s.hullId].price*.05)/20)*10;G.p.credits+=b;msg(`Wingman kill: ${s.name}. Your half of the bounty: ${fmt(b)} cr`,'good');}
   if(shooter&&shooter.player){
     G.stats.kills++;const f=S.sys.faction;
     if(s.ai.kind==='pirate'){const sid=S.sys.id;G.suppress[sid]={v:Math.min(.45,suppressed(S.sys)+.08),until:G.day+6};
@@ -1028,6 +1115,37 @@ function jumpOut(s){
   s.dead=true;burst(s.x,s.y,'#bfe6ff',14,220);
   const m=s.bountyId&&G.missions.find(x=>x.id===s.bountyId);
   if(m){m.fled=(m.fled||0)+1;const n=allNbr(S.sys.id);if(n.length)moveBounty(m,pick(Math.random,n),'Escaped');}
+  if(s.nemesis){const N=G.nemesis;N.escapes++;N.tier=Math.min(NEM_TIERS.length-1,N.tier+1);N.nextDay=G.day+rint(Math.random,4,8);
+    msg(`${s.name} escapes: "This isn't over."`,'bad');logEv(`${N.name} escaped from ${S.sys.name}.`);}
+}
+// ---------- the nemesis ----------
+// One pirate captain per charter, from the galaxy seed. They flee at 30% hull and come back a
+// ship tier stronger every 4-8 days; after three escapes they can no longer run.
+const NEM_TIERS=[{h:'skiff',o:['laser','armor','shield']},{h:'courier',o:['ion','armor','shield','engine']},
+  {h:'kestrel',o:['laser','laser','rail','armor','shield','engine']},{h:'warden',o:['rail','rail','laser','ion','rack','armor','shield','regen','engine']}];
+function makeNemesis(){const r=rngFor(G.seed,'nemesis');return{name:`${genName(r)} ${pick(r,['the Knife','Ashmouth','the Widow','Cold Tally','the Gull','Six-Fingers','the Lantern-Eater'])}`,tier:0,escapes:0,nextDay:5+rint(r,0,3),defeated:false,met:false,lastSys:null};}
+function nemesisTaunt(){
+  const N=G.nemesis,top=Object.entries(G.p.cargo).sort((a,b)=>b[1]-a[1])[0],lost=[...G.log].reverse().find(l=>l.text.startsWith('Ship lost in ')),lines=[];
+  if(top)lines.push(`Still hauling ${GOODS.find(g=>g.id===top[0]).name}, Captain? I'll take that off your hands.`);
+  if(G.stats.kills>=3)lines.push(`${G.stats.kills} kills and you think you're dangerous?`);
+  if(lost)lines.push(`Heard you lost a ship in ${lost.text.slice(13,-1)}. Want to make it two?`);
+  if(G.p.name)lines.push(`The ${G.p.name}? Pretty name for scrap.`);
+  if(G.p.hullId!=='skiff')lines.push(`Traded up to a ${HULL[G.p.hullId].name}, I see. Bigger target.`);
+  if(N.escapes)lines.push('Like the new ship? Bought it with what I took from people like you.','Remember me? I remember you.');
+  if(!lines.length)lines.push('Lovely day for it.');
+  const text=N.escapes>=3?'No more running. One of us does not leave this system.':!N.seenTaunt?`So you're the new charter everyone talks about. I'm ${N.name}. Remember it.`:pick(Math.random,lines);
+  N.seenTaunt=true;
+  comms({who:N.name,color:'#ff3d6e',text:`"${text}"`,choices:[['Bring it on',()=>{}]]});
+}
+function nemesisDefeated(s){
+  const N=G.nemesis;if(N.defeated)return;N.defeated=true;
+  const cr=8000+N.tier*6000;G.p.credits+=cr;let extra='';
+  const h=HULL[G.p.hullId],{g}=slotsUsed(G.p.outfits),li=G.p.outfits.indexOf('laser');
+  if(g<h.guns){G.p.outfits.push('fang');extra=' The Corsair Fang is yours, fitted.';}
+  else if(li>=0){G.p.outfits[li]='fang';G.p.credits+=Math.round(OUT.laser.price*.6);extra=' The Corsair Fang replaces a Pulse Laser.';}
+  else{G.p.credits+=15000;extra=' No free gun mount: you sell the Corsair Fang for 15,000 cr.';}
+  if(S&&S.me&&!S.me.dead)S.me.st=stats();
+  msg(`${N.name} is finished. +${fmt(cr)} cr.${extra}`,'good');logEv(`Defeated ${N.name}.`);toast(`<b>${esc(N.name)}</b> defeated · new paint unlocked`);
 }
 function newGoal(s){
   const R=Math.random,ports=S.sys.ports,k=s.ai.kind;
@@ -1039,6 +1157,8 @@ function newGoal(s){
 function aiUpdate(s,dt){
   const ai=s.ai;
   if(s.disabled){s.vx*=1-.25*dt;s.vy*=1-.25*dt;s.a+=.35*dt;return;}
+  if(s.ally)return allyUpdate(s,dt);
+  if(s.spared)return goalMove(s,dt);
   if(ai.kind==='trader'){
     const threat=s.hostile&&!S.me.dead?S.me:s.fleeFrom&&!s.fleeFrom.dead?s.fleeFrom:null;
     if(threat){steer(s,Math.atan2(s.y-threat.y,s.x-threat.x),dt);thrust(s,dt);if(Math.hypot(s.x,s.y)>1500)jumpOut(s);return;}
@@ -1048,17 +1168,66 @@ function aiUpdate(s,dt){
   if(ai.retarget<=0||!ai.tgt||ai.tgt.dead||(ai.tgt.player&&(S.jump||!hostileToPlayer(s)))||(!ai.tgt.player&&ai.tgt.disabled&&ai.kind==='pirate')){ai.tgt=chooseTarget(s);ai.retarget=1+Math.random();}
   const t=ai.tgt;
   if(t&&!t.dead){
-    if(ai.kind==='pirate'&&s.hull<s.st.hull*(s.bountyId?.3:.35)&&s.canFlee){if(s.bountyId&&!s.fleeing){s.fleeing=true;msg(`${s.name} is running for the jump ring!`,'bad');}steer(s,Math.atan2(s.y-t.y,s.x-t.x),dt);thrust(s,dt);if(Math.hypot(s.x,s.y)>1500)jumpOut(s);return;}
-    const dx=t.x-s.x,dy=t.y-s.y,d=Math.hypot(dx,dy),ps=s.st.guns[0]?.speed||700,lt=d/ps;
-    const want=Math.atan2(t.y+(t.vy-s.vy)*lt-s.y,t.x+(t.vx-s.vx)*lt-s.x);
-    const diff=steer(s,want,dt);
-    if(d>240&&diff<.7)thrust(s,dt);else if(diff<.25)thrust(s,dt,.4);
-    if(diff<.14&&d<600)fireGuns(s);
-    if(s.st.racks&&d<900&&d>200&&Math.random()<dt*.5)fireMissile(s,t);
-    return;
+    const named=s.bountyId||s.nemesis;
+    if(ai.kind==='pirate'&&s.hull<s.st.hull*(named?.3:.35)&&s.canFlee){if(named&&!s.fleeing){s.fleeing=true;msg(`${s.name} is running for the jump ring!`,'bad');}steer(s,Math.atan2(s.y-t.y,s.x-t.x),dt);thrust(s,dt);if(Math.hypot(s.x,s.y)>1500)jumpOut(s);return;}
+    // some pirates hail before they open fire, and hold fire while you answer
+    if(t.player&&s.willHail&&!s.hailed&&!S.comms&&!S.jump&&Math.hypot(t.x-s.x,t.y-s.y)<900){s.hailed=true;pirateHail(s);}
+    if(S.comms&&S.comms.ship===s){steer(s,Math.atan2(t.y-s.y,t.x-s.x),dt);return;}
+    return attackMove(s,t,dt);
   }
   goalMove(s,dt);
 }
+function attackMove(s,t,dt){
+  const dx=t.x-s.x,dy=t.y-s.y,d=Math.hypot(dx,dy),ps=s.st.guns[0]?.speed||700,lt=d/ps;
+  const want=Math.atan2(t.y+(t.vy-s.vy)*lt-s.y,t.x+(t.vx-s.vx)*lt-s.x);
+  const diff=steer(s,want,dt);
+  if(d>240&&diff<.7)thrust(s,dt);else if(diff<.25)thrust(s,dt,.4);
+  if(diff<.14&&d<600)fireGuns(s);
+  if(s.st.racks&&d<900&&d>200&&Math.random()<dt*.5)fireMissile(s,t);
+}
+// Fly to a point and arrive slowly, by matching a target velocity (the autopilot's method).
+function flyTo(s,tx,ty,dt,speedMul,arrive){
+  const dx=tx-s.x,dy=ty-s.y,d=Math.max(1,Math.hypot(dx,dy)),st=s.st;
+  const want=Math.min(st.speed*speedMul,Math.sqrt(2*st.accel*.6*Math.max(0,d-arrive)));
+  const dvx=dx/d*want-s.vx,dvy=dy/d*want-s.vy,dv=Math.hypot(dvx,dvy);
+  if(dv<8)return;if(steer(s,Math.atan2(dvy,dvx),dt)<.35)thrust(s,dt,Math.min(1,dv/60));
+}
+// Allies: an escorted hauler follows your route; a wingman fights beside you.
+function allyUpdate(s,dt){
+  const me=S.me,ai=s.ai;
+  if(ai.kind==='escort'){
+    const m=G.missions.find(x=>x.id===s.escortId);
+    if(m&&S.sys.id===m.dest){const p=S.sys.ports[m.destPort];return flyTo(s,p.x,p.y,dt,.75,p.size*.4);}
+    if(G.route.length&&S.sys.links.includes(G.route[0])){const to=G.gal.systems[G.route[0]],a=Math.atan2(to.y-S.sys.y,to.x-S.sys.x);return flyTo(s,Math.cos(a)*(JUMP_DIST+150),Math.sin(a)*(JUMP_DIST+150),dt,.75,20);}
+    return flyTo(s,me.x,me.y,dt,.75,90);
+  }
+  const close=G.crewOrder==='close';
+  ai.retarget-=dt;
+  if(ai.retarget<=0||!ai.tgt||ai.tgt.dead||ai.tgt.disabled||!hostileToPlayer(ai.tgt)){
+    ai.retarget=.8;let t=S.target&&!S.target.dead&&hostileToPlayer(S.target)?S.target:null;
+    if(!t){let bd=close?350:900;for(const o of S.ships){if(o.dead||!hostileToPlayer(o))continue;const d=Math.hypot(o.x-me.x,o.y-me.y);if(d<bd){bd=d;t=o;}}}
+    ai.tgt=t;
+  }
+  if(close&&ai.tgt&&Math.hypot(ai.tgt.x-me.x,ai.tgt.y-me.y)>450)ai.tgt=null;
+  if(ai.tgt&&!ai.tgt.dead&&!me.dead)return attackMove(s,ai.tgt,dt);
+  // formation: off your rear quarter, matching your velocity
+  const fx=me.x+Math.cos(me.a+2.5)*70,fy=me.y+Math.sin(me.a+2.5)*70,dx=fx-s.x,dy=fy-s.y;
+  let vx=me.vx+dx*1.6,vy=me.vy+dy*1.6;const v=Math.hypot(vx,vy),mx=s.st.speed;if(v>mx){vx*=mx/v;vy*=mx/v;}
+  const dvx=vx-s.vx,dvy=vy-s.vy,dv=Math.hypot(dvx,dvy);
+  if(dv<10){steer(s,me.a,dt);return;}
+  if(steer(s,Math.atan2(dvy,dvx),dt)<.4)thrust(s,dt,Math.min(1,dv/60));
+}
+function spawnAlly(kind,m){
+  const me=S.me,R=Math.random,c=G.crew;
+  const s=kind==='escort'?makeShip('hauler',['laser'],{name:m.escort.name,color:'#72e3a0',ai:{kind:'escort',faction:-1,tgt:null,retarget:0,goal:null},ally:true,escortId:m.id})
+    :makeShip(c.hullId,c.outfits,{name:c.name,color:'#72e3a0',ai:{kind:'wing',faction:-1,tgt:null,retarget:0,goal:null},ally:true,crew:true});
+  if(kind!=='escort')s.st.turn*=.8+.4*c.skill;
+  s.hull=Math.min(kind==='escort'?m.escort.hull:c.hull,s.st.hull);
+  const a=me.a+Math.PI+(R()-.5);s.x=me.x+Math.cos(a)*(kind==='escort'?110:70);s.y=me.y+Math.sin(a)*(kind==='escort'?110:70);s.a=me.a;s.vx=me.vx;s.vy=me.vy;
+  S.ships.push(s);return s;
+}
+const escortShip=()=>S.ships.find(s=>s.escortId&&!s.dead);
+const escortLagging=()=>{const e=escortShip();return !!e&&Math.hypot(e.x,e.y)<JUMP_DIST;};
 function goalMove(s,dt){
   const g=s.ai.goal||(s.ai.goal=newGoal(s));
   const dx=g.x-s.x,dy=g.y-s.y,d=Math.hypot(dx,dy),sp=Math.hypot(s.vx,s.vy);
@@ -1107,7 +1276,14 @@ function update(dt){
   for(const s of S.ships){s.thrusting=false;aiUpdate(s,dt);physics(s,dt);}
   // the first friendly patrol to come close scans your hold
   if(!S.scanned&&!me.dead&&S.sys.faction>=0)for(const s of S.ships)if(s.ai.kind==='patrol'&&!s.hostile&&!s.disabled&&Math.hypot(s.x-me.x,s.y-me.y)<320){
-    S.scanned=true;if(contraHeld(S.sys.faction).length&&Math.random()<G.gal.factions[S.sys.faction].law*.6)inspect(S.sys.faction,`${s.name} scan`);break;}
+    S.scanned=true;if(contraHeld(S.sys.faction).length&&Math.random()<G.gal.factions[S.sys.faction].law*.6){if(S.comms)inspect(S.sys.faction,`${s.name} scan`);else patrolHail(s);}break;}
+  // keep allies' damage in the save; close a hail whose ship is gone
+  for(const s of S.ships){if(s.dead)continue;if(s.escortId){const m=G.missions.find(x=>x.id===s.escortId);if(m)m.escort.hull=s.hull;}if(s.crew&&G.crew)G.crew.hull=s.hull;}
+  if(S.comms&&S.comms.ship&&(S.comms.ship.dead||S.comms.ship.disabled))closeComms();
+  // escort jobs draw pirate waves at the hauler
+  if(S.waves)for(const w of S.waves)if(!w.done&&(w.t-=dt)<=0){w.done=true;const e=escortShip();
+    if(e){msg(`Pirates closing on the ${e.name}!`,'bad');for(let i=0;i<w.n;i++){const p=spawnNPC('pirate');p.ai.tgt=e;p.willHail=false;}}}
+  if(S.tauntT!=null&&(S.tauntT-=dt)<=0){S.tauntT=null;if(!S.comms&&S.ships.some(s=>s.nemesis&&!s.dead))nemesisTaunt();}
   S.ships=S.ships.filter(s=>!s.dead);
   if(S.target&&S.target.dead)S.target=null;
   // shots
@@ -1120,7 +1296,7 @@ function update(dt){
     }
     b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
     for(const s of ships()){
-      if(s===b.owner||s.dead)continue;
+      if(s===b.owner||s.dead||b.owner.ally&&(s.player||s.ally))continue;
       const rr=s.size*(b.missile?1.1:.9);
       if(Math.abs(s.x-b.x)<rr&&Math.abs(s.y-b.y)<rr&&Math.hypot(s.x-b.x,s.y-b.y)<rr){
         damage(s,b.o,b.owner.dead?null:b.owner);b.life=0;burst(b.x,b.y,b.o.color||'#fff',b.missile?14:4,b.missile?150:80);break;
@@ -1170,12 +1346,12 @@ function autoFly(dt){
   if(land){tx=a.p.x;ty=a.p.y;}
   else{
     const to=G.gal.systems[G.route[0]];if(!to){S.auto=null;return;}
-    if(Math.hypot(me.x,me.y)>=JUMP_DIST+20){S.auto=null;tryJump();if(S.jump)S.jump.auto=true;return;}
+    if(Math.hypot(me.x,me.y)>=JUMP_DIST+20&&!escortLagging()){S.auto=null;tryJump();if(S.jump)S.jump.auto=true;return;}
     const ang=Math.atan2(to.y-S.sys.y,to.x-S.sys.x);tx=Math.cos(ang)*(JUMP_DIST+250);ty=Math.sin(ang)*(JUMP_DIST+250);
   }
   const dx=tx-me.x,dy=ty-me.y,d=Math.max(1,Math.hypot(dx,dy)),sp=Math.hypot(me.vx,me.vy);
   if(land&&d<a.p.size*.6&&sp<90){S.auto=null;landAt(a.p);return;}
-  const want=land?Math.min(st.speed,Math.sqrt(2*st.accel*.6*Math.max(0,d-10))):st.speed;
+  const want=land||escortLagging()?Math.min(st.speed,Math.sqrt(2*st.accel*.6*Math.max(0,d-10))):st.speed;
   const dvx=dx/d*want-me.vx,dvy=dy/d*want-me.vy,dv=Math.hypot(dvx,dvy);
   if(dv<8)return;
   if(steer(me,Math.atan2(dvy,dvx),dt)<.35)thrust(me,dt,Math.min(1,dv/60));
@@ -1203,6 +1379,8 @@ function landAt(p){
   const sys=curSys();
   for(const m of [...G.missions])if((m.type==='cargo'||m.type==='passenger')&&m.dest===sys.id&&m.destPort===p.i)payMission(m,m.type==='cargo'?'Cargo delivered':'Passengers delivered');
   for(const m of [...G.missions])if(m.type==='contract'&&m.destPort!=null&&m.dest===sys.id&&m.destPort===p.i)stepContract(m);
+  for(const m of [...G.missions])if(m.type==='escort'&&m.dest===sys.id&&m.destPort===p.i&&m.escort.hull>0){G.stats.escorts=(G.stats.escorts||0)+1;payMission(m,'Escort complete');}
+  closeComms();
   for(const m of [...G.missions])if(m.type==='rescue'){G.stats.rescued=(G.stats.rescued||0)+1;payMission(m,'Survivor delivered');}
   if(sys.faction>=0&&!isWanted(sys.faction)&&Math.random()<G.gal.factions[sys.faction].law*.4)inspect(sys.faction,'Customs');
   learnNews();
@@ -1227,11 +1405,13 @@ function tryJump(){
     return;
   }
   if(Math.hypot(me.x,me.y)<JUMP_DIST){msg(`Too deep in ${S.sys.name}'s gravity well.`+tip('Fly past the dashed ring.'));return;}
+  if(escortLagging()){if(!S.waitMsgT||S.t-S.waitMsgT>3){S.waitMsgT=S.t;msg(`Waiting for the ${escortShip().name} to clear the ring.`);}return;}
   const to=G.gal.systems[next];play('jump');buzz([15,60,15,60,40]);S.jump={t:0,to:next,ang:Math.atan2(to.y-S.sys.y,to.x-S.sys.x)};
 }
 function doJump(){
   const from=G.loc,to=S.jump.to,chain=S.jump.auto;
   G.p.fuel--;G.day++;G.route.shift();G.stats.jumps++;
+  if(G.crew){if(G.p.credits>=G.crew.wage)G.p.credits-=G.crew.wage;else{msg(`${G.crew.name} quits: you can't cover the wage.`,'bad');logEv(`${G.crew.name} quit over unpaid wages.`);G.crew=null;}}
   rollEvents(to);enterSystem(to,from);checkDeadlines();save();play('arrive');
   if(!G.route.length)msg(`Arrived at ${curSys().name}. Route complete.`);
   else if(chain)S.auto={kind:'jump'};
@@ -1254,6 +1434,7 @@ function tryBoard(){
   if(d>90){msg('Move closer to board.');return;}
   if(rv>110){msg('Match speed to board.');return;}
   t.boarded=true;G.stats.boarded++;play('scan');
+  if(t.nemesis){nemesisDefeated(t);return;}
   const tier=HULL[t.hullId].price/14000,cr=Math.round((300+Math.random()*900*tier)/10)*10;
   G.p.credits+=cr;let line=`Boarded ${t.name}: ${fmt(cr)} cr`;
   const g=pick(Math.random,GOODS),free=stats().cargo-cargoUsed(),tons=Math.min(free,rint(Math.random,1,6+Math.round(tier*2)));
@@ -1406,7 +1587,7 @@ function hud(){
   if(sys.signal&&!G.collected.has(sys.id)&&Math.sin(S.t*5)>-.3)dot(sys.signal.x,sys.signal.y,'#ffb547',4);
   for(const o of S.objs)if(o.kind==='pod'&&Math.sin(S.t*6)>-.3)dot(o.x,o.y,'#72e3a0',4);
   cx.strokeStyle='rgba(255,181,71,.25)';cx.beginPath();cx.arc(rx-me.x*sc,ry-me.y*sc,JUMP_DIST*sc,0,TAU);cx.stroke();
-  for(const s of S.ships)dot(s.x,s.y,s.disabled?'#5c6578':hostileToPlayer(s)?'#ff6262':s.ai.kind==='patrol'?s.color:'#cfd8e8',3);
+  for(const s of S.ships)dot(s.x,s.y,s.ally?'#72e3a0':s.disabled?'#5c6578':hostileToPlayer(s)?'#ff6262':s.ai.kind==='patrol'?s.color:'#cfd8e8',3);
   cx.restore();dot(me.x,me.y,'#ffb547',3);
   // target box
   if(S.target&&!S.target.dead){
@@ -1416,6 +1597,10 @@ function hud(){
     cx.fillText(`${Math.round(Math.hypot(t.x-me.x,t.y-me.y))} m  ·  ${t.disabled?(t.boarded?'STRIPPED':`DISABLED · ${kp('B','BOARD')}`):hostileToPlayer(t)?'HOSTILE':'NEUTRAL'}`,tx,ty+28);
     bar(tx,ty+46,tw,t.shield,t.st.shield,'#62d5ff','');bar(tx,ty+62,tw,t.hull,t.st.hull,'#ffb547','');tBottom=ty+72;
   }
+  // allies: escorted hauler and wingman hull bars under the target box
+  {let ay=(tBottom||ry+rr)+30;const aw=Math.min(210,W*.42),ax=W-pad-aw;
+   for(const a of S.ships)if(a.ally&&!a.dead){bar(ax,ay,aw,a.hull,a.st.hull,'#72e3a0',`${a.escortId?'ESCORT':'WING'} ${a.name.toUpperCase()}`);ay+=28;tBottom=ay-14;}}
+  if(touch){const wb=$('touch').querySelector('.wing'),has=S.ships.some(a=>a.crew&&!a.dead),lbl=`WING: ${G.crewOrder==='close'?'STAY CLOSE':'ATTACK'}`;if(wb.hidden===has)wb.hidden=!has;if(wb.textContent!==lbl)wb.textContent=lbl;}
   // messages
   const now=performance.now(),mw=Math.min(560,W-pad*2);cx.textAlign='center';cx.font='500 14px "IBM Plex Sans Condensed",sans-serif';
   // narrow screens show only the newest two, between the target box and the prompts
@@ -1445,7 +1630,7 @@ function frame(now){
   const el=now-lastT;
   if(mode==='space'){
     if(el<1000/75)return;
-    lastT=now;update(Math.min(.05,el/1000)*speed);if(mode==='space'){drawWorld();drawHUD();}
+    lastT=now;update(Math.min(.05,el/1000)*speed*(S&&S.comms?.2:1));if(mode==='space'){drawWorld();drawHUD();}
     needsDraw=false;
   }else if(mode==='title'){
     if((reduceMotion&&!needsDraw)||el<50)return;
@@ -1471,6 +1656,8 @@ addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
 function onKey(k){
   if(mode==='space'&&!S.me.dead){
+    if(S.comms&&['1','2','3'].includes(k)){choose(+k-1);return;}
+    if(k==='v'){if(!G.crew)return;G.crewOrder=G.crewOrder==='close'?'attack':'close';msg(G.crewOrder==='close'?'Wingman: stay close.':'Wingman: attack your target.');play('blip');return;}
     if(k==='l')tryLand();else if(k==='j')tryJump();else if(k==='m')openMap();else if(k==='tab')cycleTarget();else if(k==='b')tryBoard();else if(k==='g'){startAuto();play('blip');}else if(k==='escape'||k==='p')pause(true);else if(k==='c')enterPhoto('space');
   }
   else if(mode==='photo'&&(k==='escape'||k==='c'))exitPhoto();else if(mode==='map'&&(k==='m'||k==='escape'))closeMap();
@@ -1610,7 +1797,7 @@ function renderLand(){
   if(!tabs.some(t=>t[0]===landTab))landTab='port';
   let html='';
   if(landTab==='port'){
-    const fuelCost=(st.fuel-G.p.fuel)*120,dmg=Math.max(0,st.hull-G.p.hull),repCost=Math.round(dmg*9);
+    const fuelCost=(st.fuel-G.p.fuel)*120,dmg=Math.max(0,st.hull-G.p.hull),cdmg=G.crew?Math.max(0,computeStats(G.crew.hullId,G.crew.outfits).hull-G.crew.hull):0,repCost=Math.round((dmg+cdmg)*9);
     const news=G.events.filter(e=>live(e)&&G.news.has(e.id));
     const repTxt=f>=0?`${G.rep[f]>=10?'<span class="c-good">Respected</span>':G.rep[f]<0?'<span class="c-bad">Suspect</span>':'Clean'} (${G.rep[f]})`:'No authority here';
     html=`<p class="desc">${esc(port.desc)}</p>
@@ -1618,7 +1805,7 @@ function renderLand(){
     <div class="grid2">
       <div class="card"><h3>Services</h3>
         <div class="row"><span>Refuel to ${st.fuel} jumps</span><button class="btn sm" data-act="refuel" ${fuelCost===0||G.p.credits<fuelCost?'disabled':''}>${fuelCost?fmt(fuelCost)+' cr':'Full'}</button></div>
-        <div class="row"><span>Repair hull${dmg?` (${Math.round(dmg)} damage)`:''}</span><button class="btn sm" data-act="repair" ${dmg<1||G.p.credits<repCost?'disabled':''}>${dmg>=1?fmt(repCost)+' cr':'Sound'}</button></div>
+        <div class="row"><span>Repair hull${cdmg>=1?' and wingman':''}${dmg+cdmg>=1?` (${Math.round(dmg+cdmg)} damage)`:''}</span><button class="btn sm" data-act="repair" ${dmg+cdmg<1||G.p.credits<repCost?'disabled':''}>${dmg+cdmg>=1?fmt(repCost)+' cr':'Sound'}</button></div>
         <div class="row"><span>Sell survey data</span><button class="btn sm" data-act="survey" ${G.surveyVal?'':'disabled'}>${G.surveyVal?fmt(G.surveyVal)+' cr':'None'}</button></div>
       </div>
       <div class="card"><h3>Pilot record</h3><dl class="kv">
@@ -1626,8 +1813,9 @@ function renderLand(){
         <dt>Combat rating</dt><dd>${rank()} (${G.stats.kills})</dd><dt>Jobs done</dt><dd>${G.stats.jobs||0}</dd>
         <dt>Systems charted</dt><dd>${G.visited.size} / ${G.gal.systems.length}</dd><dt>Standing</dt><dd>${repTxt}</dd><dt>Authority</dt><dd style="color:${facColor(sys)}">${esc(facName(sys))}</dd></dl></div>
     </div>
+    ${crewHtml(sys,port)}
     <div class="grid2">
-      <div class="card"><h3>Station news</h3>${news.length?news.map(e=>`<div><strong>${esc(e.title)}</strong><p class="desc muted" style="font-size:calc(14px * var(--ui));margin:2px 0 8px">${esc(e.desc)} Expected to last until about day ${e.end}.</p></div>`).join(''):'<p class="muted">Nothing worth repeating.</p>'}</div>
+      <div class="card"><h3>Station news</h3>${nemesisNews()}${news.length?news.map(e=>`<div><strong>${esc(e.title)}</strong><p class="desc muted" style="font-size:calc(14px * var(--ui));margin:2px 0 8px">${esc(e.desc)} Expected to last until about day ${e.end}.</p></div>`).join(''):G.nemesis?.met&&!G.nemesis.defeated?'':'<p class="muted">Nothing worth repeating.</p>'}</div>
       <div class="card"><h3>Captain's log</h3><div class="log">${logHtml(7)}</div></div>
     </div>
     <details class="card"><summary><strong>Milestones</strong> <span class="muted">· ${G.miles.length} of ${MILESTONES.length}</span></summary>${milesHtml()}</details>`;
@@ -1654,7 +1842,7 @@ function renderLand(){
   }else if(landTab==='ship'){
     const trade=tradeIn();
     html=`<div class="card"><h3>Your ship</h3><div class="row" style="justify-content:flex-start;flex-wrap:wrap"><label class="eyebrow" for="shipName">Name</label><input id="shipName" class="text-in" maxlength="24" spellcheck="false" autocomplete="off" value="${esc(G.p.name||'')}" placeholder="Unnamed">
-      <span class="eyebrow">Paint</span>${PAINTS.map(c=>`<button class="swatch" type="button" data-act="paint" data-c="${c}" aria-label="Paint ${c}" aria-pressed="${(G.p.paint||PAINTS[0])===c}" style="background:${c}"></button>`).join('')}</div></div>
+      <span class="eyebrow">Paint</span>${[...PAINTS,...(G.nemesis?.defeated?['#ff3d6e']:[])].map(c=>`<button class="swatch" type="button" data-act="paint" data-c="${c}" aria-label="Paint ${c}" aria-pressed="${(G.p.paint||PAINTS[0])===c}" style="background:${c}"></button>`).join('')}</div></div>
     <p class="desc muted">Your ${esc(HULL[G.p.hullId].name)} and fitted outfits trade in for <span class="mono c-amber">${fmt(trade)} cr</span>. Outfits that fit the new hull move across; the rest are sold.</p>
     <div class="grid2">${HULLS.filter(h=>h.tech<=port.tech).map(h=>{
       const cost=h.price-trade,mine=h.id===G.p.hullId,ok=!mine&&G.p.credits>=cost&&cargoUsed()<=h.cargo;
@@ -1723,6 +1911,24 @@ function setJobHL(e){const j=e.target.closest&&e.target.closest('.job[data-m]'),
 landEl.addEventListener('pointerover',setJobHL);landEl.addEventListener('focusin',setJobHL);
 landEl.addEventListener('pointerleave',()=>{jobHL=null;drawJobMap();});
 landEl.addEventListener('change',e=>{if(e.target.id!=='shipName')return;const n=e.target.value.trim().slice(0,24);if(n&&n!==G.p.name)logEv(`Renamed the ship ${n}.`);G.p.name=n;});
+// ---------- crew ----------
+function crewOffers(sys,port){
+  const r=rngFor(G.seed,'crew',sys.id,port.i,G.day),n=rint(r,2,3),out=[];
+  for(let i=0;i<n;i++){const hullId=r()<.55?'courier':'kestrel',skill=Math.round((.4+r()*.6)*10)/10;
+    out.push({id:`${sys.id}.${port.i}.${G.day}.${i}`,name:`${genName(r)} ${pick(r,['Vance','Okoro','Hale','Marsh','Reyes','Lindqvist','Ash','Moreau'])}`,hullId,outfits:hullId==='kestrel'?['laser','laser','ion','armor']:['laser','armor'],skill,wage:Math.round((250+skill*400+(hullId==='kestrel'?250:0))/10)*10});}
+  return out;
+}
+function crewHtml(sys,port){
+  if(port.tech<3&&!G.crew)return '';
+  const c=G.crew,cs=c&&computeStats(c.hullId,c.outfits);
+  const cur=c?`<div class="row"><span><strong>${esc(c.name)}</strong> <span class="muted">· ${HULL[c.hullId].name}, skill ${Math.round(c.skill*10)}/10, ${fmt(c.wage)} cr per jump${c.hull<cs.hull?`, ${Math.round(cs.hull-c.hull)} damage`:''}</span></span><button class="btn sm" data-act="letgo">Let go</button></div>`:'';
+  const offers=!c&&port.tech>=3?crewOffers(sys,port).map(o=>`<div class="row"><span><strong>${esc(o.name)}</strong> <span class="muted">· ${HULL[o.hullId].name}, skill ${Math.round(o.skill*10)}/10, ${fmt(o.wage)} cr per jump</span></span><button class="btn sm" data-act="hire" data-c="${o.id}" ${G.p.credits<o.wage?'disabled':''}>Hire · ${fmt(o.wage)} cr</button></div>`).join(''):'';
+  return `<div class="card"><h3>Crew</h3>${cur}${offers}${!c&&hints?`<p class="muted" style="margin:0;font-size:calc(13px * var(--ui))">A wingman flies with you, attacks your target and takes half of any bounty they earn. Wages are paid at every jump.</p>`:''}</div>`;
+}
+function nemesisNews(){
+  const N=G.nemesis;if(!N||!N.met||N.defeated)return '';
+  return `<div><strong class="c-bad">${esc(N.name)} at large</strong><p class="desc muted" style="font-size:calc(14px * var(--ui));margin:2px 0 8px">Last seen in ${esc(G.gal.systems[N.lastSys].name)}, flying a ${HULL[NEM_TIERS.at(N.tier).h].name}.${N.escapes>=3?' Word is they are done running.':''}</p></div>`;
+}
 function tradeIn(){return Math.round(HULL[G.p.hullId].price*.55+G.p.outfits.reduce((a,id)=>a+OUT[id].price*.5,0));}
 landEl.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
@@ -1732,7 +1938,9 @@ landEl.addEventListener('click',e=>{
     case 'takeoff':takeOff();return;
     case 'fine':G.p.credits-=+d.n;G.rep[curSys().faction]=-5;save();break;
     case 'refuel':G.p.credits-=(st.fuel-G.p.fuel)*120;G.p.fuel=st.fuel;break;
-    case 'repair':G.p.credits-=Math.round((st.hull-G.p.hull)*9);G.p.hull=st.hull;break;
+    case 'repair':{const ch=G.crew?computeStats(G.crew.hullId,G.crew.outfits).hull:0;G.p.credits-=Math.round((st.hull-G.p.hull+(G.crew?ch-G.crew.hull:0))*9);G.p.hull=st.hull;if(G.crew)G.crew.hull=ch;break;}
+    case 'hire':{const c=crewOffers(curSys(),port).find(x=>x.id===d.c);if(c&&!G.crew&&G.p.credits>=c.wage){G.p.credits-=c.wage;G.crew={...c,hull:computeStats(c.hullId,c.outfits).hull};G.crewOrder='attack';logEv(`Hired ${c.name} as wingman.`);}break;}
+    case 'letgo':if(G.crew){logEv(`Let ${G.crew.name} go.`);G.crew=null;}break;
     case 'survey':G.p.credits+=G.surveyVal;G.surveyVal=0;break;
     case 'buy':{const n=+d.n,p=price(port,d.g);play('coin');G.p.credits-=n*p;G.p.cargo[d.g]=(G.p.cargo[d.g]||0)+n;break;}
     case 'sell':{const n=+d.n,p=price(port,d.g);play('coin');if(banned(curSys().faction,d.g))G.flags.smuggled=true;G.p.credits+=n*p;G.p.cargo[d.g]-=n;if(!G.p.cargo[d.g])delete G.p.cargo[d.g];break;}
@@ -1837,7 +2045,7 @@ mc.addEventListener('wheel',e=>{e.preventDefault();mv.z=clamp(mv.z*(e.deltaY<0?1
 function randomSeed(){const a=['amber','cinder','hollow','quiet','iron','tidal','violet','lantern','salt','ember','frost','north'],b=['reach','drift','verge','sound','wake','span','gate','shoal'];return `${pick(Math.random,a)}-${pick(Math.random,b)}-${rint(Math.random,10,99)}`;}
 function showTitle(){
   mode='title';S=null;
-  for(const id of ['land','map','pause','dead','score','photoBar'])$(id).hidden=true;
+  for(const id of ['land','map','pause','dead','score','photoBar','comms'])$(id).hidden=true;
   $('title').hidden=false;$('seed').value=randomSeed();
   const sv=readSave()||(lastSave?JSON.parse(lastSave):null);
   const best=dailyBests()[todayUTC()];$('daily').textContent=best!=null?`Daily galaxy · best ${fmt(best)}`:'Daily galaxy';
@@ -1869,7 +2077,7 @@ $('toTitle').onclick=()=>showTitle();
 
 // ---------- debug hook ----------
 // Only with ?debug in the URL: lets scripted tests reach the game state.
-try{if(new URLSearchParams(location.search).has('debug'))window.__lr={get G(){return G;},get S(){return S;},spawnNPC,setPref,keys,checkMilestones,fileDaily,get mode(){return mode;},get Z(){return Z;}};}catch(e){}
+try{if(new URLSearchParams(location.search).has('debug'))window.__lr={get G(){return G;},get S(){return S;},spawnNPC,setPref,keys,checkMilestones,fileDaily,get mode(){return mode;},get Z(){return Z;},choose,pirateHail,patrolHail,nemesisTaunt,spawnAlly,damage,destroy,jumpOut,landAt,tryJump,startAuto};}catch(e){}
 
 // ---------- boot ----------
 window.claude?.hot?.snapshot?.(()=>({save:G?serialize():null,landed:mode==='landed'}));
